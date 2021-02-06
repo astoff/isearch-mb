@@ -51,8 +51,7 @@
           (goto-char isearch-barrier)
           (setq isearch-adjusted t)
           (setq isearch-success t)
-          (isearch-search-and-update))
-        )))
+          (isearch-search-and-update)))))
   (set-text-properties (minibuffer-prompt-end) (point-max) nil)
   (when-let ((fail-pos (isearch-fail-pos)))
     (add-text-properties (+ (minibuffer-prompt-end) fail-pos)
@@ -103,7 +102,12 @@
   "Advice to make `isearch-mode' read from the minibuffer."
   (interactive)
   (let ((isearch-mode-map nil)
-        (history-add-new-input nil))
+        (history-add-new-input nil)
+        ;; We need to set `inhibit-redisplay' at certain points to
+        ;; avoid flicker.  As a side effect, window-start/end in
+        ;; `isearch-lazy-highlight-update' will have incorrect values,
+        ;; so we need to lazy-highlight the whole buffer.
+        (lazy-highlight-buffer (not (null isearch-lazy-highlight))))
   (unwind-protect
       (progn
         (apply fn args)
