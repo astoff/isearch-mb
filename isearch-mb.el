@@ -47,19 +47,16 @@
         (isearch-update-from-string-properties new-string)
         (if (get this-command 'isearch-mb-no-search)
             (isearch-update)
-          ;; (isearch-fallback nil nil t)
           (goto-char isearch-barrier)
-          (setq isearch-adjusted t)
-          (setq isearch-success t)
-          (isearch-search-and-update)))))
+          (setq isearch-adjusted t isearch-yank-flag t)
+        (isearch-search-and-update)))))
   (set-text-properties (minibuffer-prompt-end) (point-max) nil)
   (when-let ((fail-pos (isearch-fail-pos)))
     (add-text-properties (+ (minibuffer-prompt-end) fail-pos)
                          (point-max)
                          '(face isearch-fail)))
-  (cond (isearch-error
-         (isearch-mb--message isearch-error))
-        (isearch-wrapped (isearch-mb--message "Wrapped"))))
+  (when isearch-error
+    (isearch-mb--message isearch-error)))
 
 (defun isearch-mb--minibuffer-setup ()
   (setq isearch-mb--prompt-overlay (make-overlay (point-min) (point-min)
@@ -73,16 +70,12 @@
 
 (defun isearch-mb--prompt (&rest _)
   (when isearch-mb--prompt-overlay
-    (overlay-put isearch-mb--prompt-overlay 'before-string
+    (overlay-put isearch-mb--prompt-overlay
+                 'before-string
                  (concat
                   (isearch-lazy-count-format)
                   (capitalize
                    (isearch--describe-regexp-mode isearch-regexp-function))))))
-
-(defun isearch-mb--command-advice (fn &rest args)
-  (let ((inhibit-redisplay t))
-    (with-minibuffer-selected-window
-      (apply fn args))))
 
 (defvar isearch-mb-minibuffer-map
   (let ((map (make-sparse-keymap)))
@@ -98,48 +91,67 @@
     (define-key map (kbd "M->") 'isearch-end-of-buffer)
     map))
 
-(defun isearch-mb--isearch-mode-advice (fn &rest args)
-  "Advice to make `isearch-mode' read from the minibuffer."
-  (interactive)
-  (let ((isearch-mode-map nil)
-        (history-add-new-input nil)
-        ;; We need to set `inhibit-redisplay' at certain points to
-        ;; avoid flicker.  As a side effect, window-start/end in
-        ;; `isearch-lazy-highlight-update' will have incorrect values,
-        ;; so we need to lazy-highlight the whole buffer.
-        (lazy-highlight-buffer (not (null isearch-lazy-highlight))))
-  (unwind-protect
-      (progn
-        (apply fn args)
-        (minibuffer-with-setup-hook 'isearch-mb--minibuffer-setup
-          (read-from-minibuffer
-           "I-search: " nil
-           isearch-mb-minibuffer-map nil
-           (if isearch-regexp 'regexp-search-ring 'search-ring)
-           (if-let (thing (thing-at-point 'symbol))
-               (if isearch-regexp (regexp-quote thing) thing))
-           t))
-        (isearch-done))
-    (when isearch-mode (ignore-error quit (isearch-cancel))))))
+(defun isearch-mb--command-advice (fn &rest args)
+  (if (eq (current-buffer) isearch--current-buffer)
+      (apply fn args)
+    (let ((inhibit-redisplay t))
+      (with-minibuffer-selected-window
+        (apply fn args)))))
 
-(defvar isearch-mb--advices
-  '((isearch-mode                :around isearch-mb--isearch-mode-advice)
-    (isearch-message             :override isearch-mb--prompt)
-    (isearch--momentary-message  :override isearch-mb--message)
-    (isearch-toggle-regexp       :around isearch-mb--command-advice)
-    (isearch-toggle-case-fold    :around isearch-mb--command-advice)
-    (isearch-toggle-word         :around isearch-mb--command-advice)
-    (isearch-repeat-forward      :around isearch-mb--command-advice)
-    (isearch-repeat-backward     :around isearch-mb--command-advice)
-    (isearch-beginning-of-buffer :around isearch-mb--command-advice)
-    (isearch-end-of-buffer       :around isearch-mb--command-advice)))
+(defun isearch-mb--activate (&rest _)
+  "Activate `isearch-mode' read from the minibuffer."
+  (when isearch-mb-mode
+    (setq overriding-terminal-local-map nil)
+    (advice-add 'isearch-message :override 'isearch-mb--prompt)
+    (advice-add 'isearch--momentary-message :override 'isearch-mb--message)
+    (let ((history-add-new-input nil)
+          ;; We need to set `inhibit-redisplay' at certain points to
+          ;; avoid flicker.  As a side effect, window-start/end in
+          ;; `isearch-lazy-highlight-update' will have incorrect values,
+          ;; so we need to lazy-highlight the whole buffer.
+          (lazy-highlight-buffer (not (null isearch-lazy-highlight))))
+      (unwind-protect
+          (progn
+            (minibuffer-with-setup-hook 'isearch-mb--minibuffer-setup
+              (read-from-minibuffer
+               "I-search: "
+               isearch-string
+               isearch-mb-minibuffer-map
+               nil
+               (if isearch-regexp 'regexp-search-ring 'search-ring)
+               (when-let (thing (thing-at-point 'symbol))
+                 (if isearch-regexp (regexp-quote thing) thing))
+               t))
+            (isearch-done))
+        (when isearch-mode (ignore-error quit (isearch-cancel)))
+        (advice-remove 'isearch-message 'isearch-mb--prompt)
+        (advice-remove 'isearch--momentary-message 'isearch-mb--message)))))
+
+(advice-add 'isearch-forward                 :after 'isearch-mb--activate)
+(advice-add 'isearch-backward                :after 'isearch-mb--activate)
+(advice-add 'isearch-forward-regexp          :after 'isearch-mb--activate)
+(advice-add 'isearch-backward-regexp         :after 'isearch-mb--activate)
+(advice-add 'isearch-forward-word            :after 'isearch-mb--activate)
+;(advice-add 'isearch-forward-symbol          :after 'isearch-mb--activate)
+(advice-add 'isearch-forward-symbol-at-point :after 'isearch-mb--activate)
+
+(advice-add 'isearch-toggle-regexp       :around 'isearch-mb--command-advice)
+(advice-add 'isearch-toggle-case-fold    :around 'isearch-mb--command-advice)
+(advice-add 'isearch-toggle-word         :around 'isearch-mb--command-advice)
+(advice-add 'isearch-repeat-forward      :around 'isearch-mb--command-advice)
+(advice-add 'isearch-repeat-backward     :around 'isearch-mb--command-advice)
+(advice-add 'isearch-beginning-of-buffer :around 'isearch-mb--command-advice)
+(advice-add 'isearch-end-of-buffer       :around 'isearch-mb--command-advice)
 
 ;;;###autoload
 (define-minor-mode isearch-mb-mode
-  "Control Isearch from minibuffer."
-  :global t
-  (if isearch-mb-mode
-      (mapc (lambda (arg) (apply 'advice-add arg))
-            isearch-mb--advices)
-    (mapc (lambda (arg) (funcall 'advice-remove (car arg) (caddr arg)))
-          isearch-mb--advices)))
+  "Control Isearch from minibuffer.")
+
+;;;###autoload
+(define-globalized-minor-mode isearch-mb-global-mode
+  isearch-mb-mode
+  (lambda () (unless (minibufferp) (isearch-mb-mode))))
+
+(provide 'isearch-mb)
+
+;;; isearch-mb.el ends here
