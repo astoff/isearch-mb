@@ -83,13 +83,13 @@
 
 (defun isearch-mb--message (message)
   "Display a momentary MESSAGE."
-  (when isearch-mb-mode
+  (when isearch-mb-local-mode
     (message (propertize (concat " [" message "]")
                          'face 'minibuffer-prompt))))
 
 (defun isearch-mb--prompt (&rest _)
   "Update the minibuffer prompt according to search status."
-  (prog1 isearch-mb-mode
+  (prog1 isearch-mb-local-mode
     (when isearch-mb--prompt-overlay
       (overlay-put isearch-mb--prompt-overlay
                    'before-string
@@ -123,48 +123,49 @@ Intended as an advice for commands that quit Isearch."
 
 (defun isearch-mb--session ()
   "Read search string from the minibuffer."
-  (when isearch-mode
-    (condition-case nil
-        (apply
-         (catch 'isearch-mb--after-exit
-           (let (;; Hack to render `isearch-pre-command-hook' without effect.
-                 (isearch--saved-overriding-local-map t)
-                 ;; We need to set `inhibit-redisplay' at certain points to
-                 ;; avoid flicker.  As a side effect, window-start/end in
-                 ;; `isearch-lazy-highlight-update' will have incorrect values,
-                 ;; so we need to lazy-highlight the whole buffer.
-                 (lazy-highlight-buffer (not (null isearch-lazy-highlight))))
-             (minibuffer-with-setup-hook
-                 (lambda ()
-                   (add-hook 'post-command-hook 'isearch-mb--post-command-hook nil 'local)
-                   (setq isearch-mb--prompt-overlay (make-overlay (point-min) (point-min)
-                                                                  (current-buffer) t t))
-                   (isearch-mb--prompt))
-               (read-from-minibuffer
-                "I-search: "
-                isearch-string
-                isearch-mb-minibuffer-map
-                nil
-                (if isearch-regexp 'regexp-search-ring 'search-ring)
-                (when-let (thing (thing-at-point 'symbol))
-                  (if isearch-regexp (regexp-quote thing) thing))
-                t))
-             (if isearch-mode '(isearch-done) '(ignore)))))
-      (quit (if isearch-mode (isearch-cancel) (signal 'quit nil))))))
+  (condition-case nil
+      (apply
+       (catch 'isearch-mb--after-exit
+         (let (;; We need to set `inhibit-redisplay' at certain points to
+               ;; avoid flicker.  As a side effect, window-start/end in
+               ;; `isearch-lazy-highlight-update' will have incorrect values,
+               ;; so we need to lazy-highlight the whole buffer.
+               (lazy-highlight-buffer (not (null isearch-lazy-highlight))))
+           (minibuffer-with-setup-hook
+               (lambda ()
+                 (add-hook 'post-command-hook 'isearch-mb--post-command-hook nil 'local)
+                 (setq isearch-mb--prompt-overlay (make-overlay (point-min) (point-min)
+                                                                (current-buffer) t t))
+                 (isearch-mb--prompt))
+             (read-from-minibuffer
+              "I-search: "
+              isearch-string
+              isearch-mb-minibuffer-map
+              nil
+              (if isearch-regexp 'regexp-search-ring 'search-ring)
+              (when-let (thing (thing-at-point 'symbol))
+                (if isearch-regexp (regexp-quote thing) thing))
+              t))
+           (if isearch-mode '(isearch-done) '(ignore)))))
+    (quit (if isearch-mode (isearch-cancel) (signal 'quit nil)))))
 
 (defun isearch-mb--setup ()
   "Arrange to start Isearch-Mb after this command, if applicable."
-  (when isearch-mb-mode
+  (when isearch-mb-local-mode
     (setq overriding-terminal-local-map nil)
-    (run-with-idle-timer 0 nil 'isearch-mb--session)))
+    ;; When `with-isearch-suspended' is involved, this hook may run
+    ;; more than once, hence the test for `isearch-mode'.
+    (run-with-idle-timer 0 nil (lambda() (when isearch-mode (isearch-mb--session))))))
 
 (add-hook 'isearch-mode-hook 'isearch-mb--setup)
 
 (put 'next-history-element 'isearch-mb--no-search t)
 (put 'previous-history-element 'isearch-mb--no-search t)
 
-(advice-add 'isearch-message            :before-until 'isearch-mb--prompt)
+(advice-add 'isearch-message :before-until 'isearch-mb--prompt)
 (advice-add 'isearch--momentary-message :before-until 'isearch-mb--message)
+(advice-add 'isearch-pre-command-hook :before-until (lambda () isearch-mb-local-mode))
+(advice-add 'isearch-post-command-hook :around 'isearch-mb--with-buffer)
 
 (advice-add 'isearch-beginning-of-buffer   :around 'isearch-mb--with-buffer)
 (advice-add 'isearch-end-of-buffer         :around 'isearch-mb--with-buffer)
@@ -185,16 +186,16 @@ Intended as an advice for commands that quit Isearch."
 (advice-add 'isearch-highlight-lines-matching-regexp :around 'isearch-mb--after-exit)
 
 ;;;###autoload
-(define-minor-mode isearch-mb-mode
+(define-minor-mode isearch-mb-local-mode
   "Control Isearch from the minibuffer.
 
 During an Isearch-Mb session, the following keys are available:
 \\{isearch-mb-minibuffer-map}")
 
 ;;;###autoload
-(define-globalized-minor-mode isearch-mb-global-mode
-  isearch-mb-mode
-  (lambda () (unless (minibufferp) (isearch-mb-mode))))
+(define-globalized-minor-mode isearch-mb-mode
+  isearch-mb-local-mode
+  (lambda () (unless (minibufferp) (isearch-mb-local-mode))))
 
 (provide 'isearch-mb)
 ;;; isearch-mb.el ends here
