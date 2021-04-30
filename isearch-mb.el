@@ -124,7 +124,8 @@ Intended as an advice for Isearch commands."
 
 (defun isearch-mb--after-exit (fn &rest args)
   "Call FN with ARGS, after quitting Isearch-Mb.
-Intended as an advice for commands that quit Isearch."
+Intended as an advice for commands that quit Isearch and use the
+minibuffer."
   (if (and (minibufferp)
              (not (eq (current-buffer) isearch--current-buffer)))
       (throw 'isearch-mb--after-exit (cons fn args))
@@ -145,10 +146,13 @@ Intended as an advice for commands that quit Isearch."
                  (add-hook 'post-command-hook 'isearch-mb--post-command-hook nil 'local)
                  (setq isearch-mb--prompt-overlay (make-overlay (point-min) (point-min)
                                                                 (current-buffer) t t))
-                 (isearch-mb--prompt))
+                 (isearch-mb--prompt)
+                 (when isearch-error
+                   (message (propertize (concat " [" isearch-error "]")
+                                        'face 'minibuffer-prompt))))
              (read-from-minibuffer
               "I-search: "
-              isearch-string
+              nil
               isearch-mb-minibuffer-map
               nil
               (if isearch-regexp 'regexp-search-ring 'search-ring)
