@@ -156,8 +156,11 @@ minibuffer."
               isearch-mb-minibuffer-map
               nil
               (if isearch-regexp 'regexp-search-ring 'search-ring)
-              (when-let (thing (thing-at-point 'symbol))
-                (if isearch-regexp (regexp-quote thing) thing))
+              (thread-last '(region url symbol sexp line) ;; TODO: make customizable
+                (mapcar 'thing-at-point)
+                (delq nil)
+                (delete-dups)
+                (mapcar (if isearch-regexp 'regexp-quote 'identity)))
               t))
            (if isearch-mode '(isearch-done) '(ignore)))))
     (quit (if isearch-mode (isearch-cancel) (signal 'quit nil)))))
