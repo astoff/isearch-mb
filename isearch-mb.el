@@ -64,15 +64,23 @@
             text isearch-string)
       (delete-minibuffer-contents)
       (insert isearch-string))
+    ;; Update search buffer
     (unless (string-equal text isearch-string)
       (let ((inhibit-redisplay t))
         (with-minibuffer-selected-window
           (setq isearch-string (substring-no-properties text))
           (isearch-update-from-string-properties text)
-          (if (get this-command 'isearch-mb--no-search)
+          ;; Backtrack to barrier and search, unless the `this-command'
+          ;; is special or the search regexp is invalid.
+          (if (or (get this-command 'isearch-mb--no-search)
+                  (and isearch-regexp
+                       (condition-case err
+                           (prog1 nil (string-match-p isearch-string ""))
+                         (invalid-regexp
+                          (prog1 t (isearch-mb--message (cadr err)))))))
               (isearch-update)
             (goto-char isearch-barrier)
-            (setq isearch-adjusted t isearch-yank-flag t)
+            (setq isearch-adjusted t isearch-success t)
             (isearch-search-and-update))))))
   (set-text-properties (minibuffer-prompt-end) (point-max) nil)
   (when-let ((fail-pos (isearch-fail-pos)))
