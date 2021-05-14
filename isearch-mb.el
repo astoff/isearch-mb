@@ -44,6 +44,34 @@
 (defvar isearch-mb--session nil
   "Non-nil while reading the search string from the minibuffer.")
 
+(defvar isearch-mb--with-buffer
+  (list #'isearch-post-command-hook
+        #'isearch-beginning-of-buffer
+        #'isearch-end-of-buffer
+        #'isearch-occur
+        #'isearch-repeat-backward
+        #'isearch-repeat-forward
+        #'isearch-toggle-case-fold
+        #'isearch-toggle-char-fold
+        #'isearch-toggle-invisible
+        #'isearch-toggle-lax-whitespace
+        #'isearch-toggle-regexp
+        #'isearch-toggle-symbol
+        #'isearch-toggle-word
+        #'isearch-exit
+        #'isearch-delete-char))
+
+(defvar isearch-mb--after-exit
+  (list #'isearch-query-replace
+        #'isearch-query-replace-regexp
+        #'isearch-highlight-regexp
+        #'isearch-highlight-lines-matching-regexp
+        #'isearch-abort))
+
+(defvar isearch-mb--no-search
+  (list #'next-history-element
+        #'previous-history-element))
+
 (defvar isearch-mb-minibuffer-map
   (let ((map (make-composed-keymap nil minibuffer-local-map)))
     (define-key map [remap isearch-forward] #'isearch-repeat-forward)
@@ -79,7 +107,7 @@
       ;; Backtrack to barrier and search, unless `this-command' is
       ;; special or the search regexp is invalid.
       (if (or (and (symbolp this-command)
-                   (get this-command 'isearch-mb--no-search))
+                   (memq this-command isearch-mb--no-search))
               (and isearch-regexp
                    (condition-case err
                        (prog1 nil (string-match-p isearch-string ""))
@@ -188,33 +216,6 @@ minibuffer."
     ;; When `with-isearch-suspended' is involved, this hook may run
     ;; more than once, hence the test for `isearch-mode'.
     (run-with-idle-timer 0 nil (lambda() (when isearch-mode (isearch-mb--session))))))
-
-(put 'next-history-element 'isearch-mb--no-search t)
-(put 'previous-history-element 'isearch-mb--no-search t)
-
-(defvar isearch-mb--with-buffer
-  (list #'isearch-post-command-hook
-        #'isearch-beginning-of-buffer
-        #'isearch-end-of-buffer
-        #'isearch-occur
-        #'isearch-repeat-backward
-        #'isearch-repeat-forward
-        #'isearch-toggle-case-fold
-        #'isearch-toggle-char-fold
-        #'isearch-toggle-invisible
-        #'isearch-toggle-lax-whitespace
-        #'isearch-toggle-regexp
-        #'isearch-toggle-symbol
-        #'isearch-toggle-word
-        #'isearch-exit
-        #'isearch-delete-char))
-
-(defvar isearch-mb--after-exit
-  (list #'isearch-query-replace
-        #'isearch-query-replace-regexp
-        #'isearch-highlight-regexp
-        #'isearch-highlight-lines-matching-regexp
-        #'isearch-abort))
 
 (defun isearch-mb--pre-command-hook ()
   isearch-mb--session)
