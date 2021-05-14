@@ -84,7 +84,7 @@
                    (condition-case err
                        (prog1 nil (string-match-p isearch-string ""))
                      (invalid-regexp
-                      (prog1 t (isearch-mb--message (cadr err)))))))
+                      (prog1 t (isearch-mb--momentary-message (cadr err)))))))
           (isearch-update)
         (goto-char isearch-barrier)
         (setq isearch-adjusted t isearch-success t)
@@ -105,9 +105,9 @@
                            (point-max)
                            '(face isearch-fail)))
     (when isearch-error
-      (isearch-mb--message isearch-error))))
+      (isearch-mb--momentary-message isearch-error))))
 
-(defun isearch-mb--message (message)
+(defun isearch-mb--momentary-message (message)
   "Display a momentary MESSAGE."
   (when isearch-mb--session
     (let ((message-log-max nil))
@@ -192,32 +192,32 @@ minibuffer."
 (put 'next-history-element 'isearch-mb--no-search t)
 (put 'previous-history-element 'isearch-mb--no-search t)
 
-(advice-add #'isearch--momentary-message :before-until #'isearch-mb--message)
-(advice-add #'isearch-pre-command-hook :before-until (lambda () isearch-mb--session))
-(advice-add #'isearch-post-command-hook :around #'isearch-mb--with-buffer)
+(defvar isearch-mb--with-buffer
+  (list #'isearch-post-command-hook
+        #'isearch-beginning-of-buffer
+        #'isearch-end-of-buffer
+        #'isearch-occur
+        #'isearch-repeat-backward
+        #'isearch-repeat-forward
+        #'isearch-toggle-case-fold
+        #'isearch-toggle-char-fold
+        #'isearch-toggle-invisible
+        #'isearch-toggle-lax-whitespace
+        #'isearch-toggle-regexp
+        #'isearch-toggle-symbol
+        #'isearch-toggle-word
+        #'isearch-exit
+        #'isearch-delete-char))
 
-(advice-add #'isearch-beginning-of-buffer   :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-end-of-buffer         :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-occur                 :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-repeat-backward       :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-repeat-forward        :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-toggle-case-fold      :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-toggle-char-fold      :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-toggle-invisible      :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-toggle-lax-whitespace :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-toggle-regexp         :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-toggle-symbol         :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-toggle-word           :around #'isearch-mb--with-buffer)
+(defvar isearch-mb--after-exit
+  (list #'isearch-query-replace
+        #'isearch-query-replace-regexp
+        #'isearch-highlight-regexp
+        #'isearch-highlight-lines-matching-regexp
+        #'isearch-abort))
 
-(advice-add #'isearch-query-replace                   :around #'isearch-mb--after-exit)
-(advice-add #'isearch-query-replace-regexp            :around #'isearch-mb--after-exit)
-(advice-add #'isearch-highlight-regexp                :around #'isearch-mb--after-exit)
-(advice-add #'isearch-highlight-lines-matching-regexp :around #'isearch-mb--after-exit)
-
-;; For toolbar
-(advice-add #'isearch-exit        :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-delete-char :around #'isearch-mb--with-buffer)
-(advice-add #'isearch-abort       :around #'isearch-mb--after-exit)
+(defun isearch-mb--pre-command-hook ()
+  isearch-mb--session)
 
 ;;;###autoload
 (define-minor-mode isearch-mb-mode
@@ -228,11 +228,23 @@ During an Isearch-Mb session, the following keys are available:
   :global t
   (cond
    (isearch-mb-mode
+    (dolist (fun isearch-mb--after-exit)
+      (advice-add fun :around #'isearch-mb--after-exit))
+    (dolist (fun isearch-mb--with-buffer)
+      (advice-add fun :around #'isearch-mb--with-buffer))
+    (advice-add #'isearch--momentary-message :before-until #'isearch-mb--momentary-message)
+    (advice-add #'isearch-pre-command-hook :before-until #'isearch-mb--pre-command-hook)
     ;; Setting `isearch-message-function' currently disables lazy count,
     ;; so we need this workaround.
     (advice-add #'isearch-message :override #'isearch-mb--update-prompt)
     (add-hook 'isearch-mode-hook #'isearch-mb--setup))
    (t
+    (dolist (fun isearch-mb--after-exit)
+      (advice-remove fun #'isearch-mb--after-exit))
+    (dolist (fun isearch-mb--with-buffer)
+      (advice-remove fun #'isearch-mb--with-buffer))
+    (advice-remove #'isearch--momentary-message #'isearch-mb--momentary-message)
+    (advice-remove #'isearch-pre-command-hook #'isearch-mb--pre-command-hook)
     (advice-remove #'isearch-message #'isearch-mb--update-prompt)
     (remove-hook 'isearch-mode-hook #'isearch-mb--setup))))
 
