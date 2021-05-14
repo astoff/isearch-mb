@@ -34,7 +34,9 @@
 
 ;;; Code:
 
-(eval-when-compile (require 'subr-x))
+(eval-when-compile
+  (require 'cl-lib)
+  (require 'subr-x))
 
 (defvar isearch-mb--prompt-overlay nil
   "Overlay for minibuffer prompt updates.")
