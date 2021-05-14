@@ -41,6 +41,7 @@
 (defvar isearch-mb--prompt-overlay nil
   "Overlay for minibuffer prompt updates.")
 
+;; TODO describe in the docstring why we need the buffer advice
 (defvar isearch-mb--with-buffer
   (list #'isearch-post-command-hook
         #'isearch-beginning-of-buffer
@@ -58,6 +59,7 @@
         #'isearch-exit
         #'isearch-delete-char))
 
+;; TODO describe in the docstring why we need the after exit advice
 (defvar isearch-mb--after-exit
   (list #'isearch-query-replace
         #'isearch-query-replace-regexp
@@ -65,6 +67,7 @@
         #'isearch-highlight-lines-matching-regexp
         #'isearch-abort))
 
+;; TODO describe the purpose of this setting
 (defvar isearch-mb--no-search
   (list #'next-history-element
         #'previous-history-element))
