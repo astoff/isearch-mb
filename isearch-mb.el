@@ -41,9 +41,6 @@
 (defvar isearch-mb--prompt-overlay nil
   "Overlay for minibuffer prompt updates.")
 
-(defvar isearch-mb--session nil
-  "Non-nil while reading the search string from the minibuffer.")
-
 (defvar isearch-mb--with-buffer
   (list #'isearch-post-command-hook
         #'isearch-beginning-of-buffer
@@ -137,10 +134,9 @@
 
 (defun isearch-mb--momentary-message (message)
   "Display a momentary MESSAGE."
-  (when isearch-mb--session
-    (let ((message-log-max nil))
-      (message (propertize (concat " [" message "]")
-                           'face 'minibuffer-prompt)))))
+  (let ((message-log-max nil))
+    (message (propertize (concat " [" message "]")
+                         'face 'minibuffer-prompt))))
 
 (defun isearch-mb--update-prompt (&rest _)
   "Update the minibuffer prompt according to search status."
@@ -157,7 +153,7 @@
 (defun isearch-mb--with-buffer (&rest args)
   "Evaluate ARGS in the search buffer.
 Intended as an advice for Isearch commands."
-  (if (and isearch-mb--session (minibufferp))
+  (if (minibufferp)
       (let ((enable-recursive-minibuffers t)
             (inhibit-redisplay t))
         (with-minibuffer-selected-window
@@ -170,17 +166,14 @@ Intended as an advice for Isearch commands."
   "Evaluate ARGS, after quitting Isearch-Mb.
 Intended as an advice for commands that quit Isearch and use the
 minibuffer."
-  (if isearch-mb--session
-      (throw 'isearch-mb--continue args)
-    (apply args)))
+  (throw 'isearch-mb--continue args))
 
 (defun isearch-mb--session ()
   "Read search string from the minibuffer."
   (condition-case nil
       (apply
        (catch 'isearch-mb--continue
-         (cl-letf ((isearch-mb--session t)
-                   ((cdr isearch-mode-map) nil)
+         (cl-letf (((cdr isearch-mode-map) nil)
                    ;; We need to set `inhibit-redisplay' at certain points to
                    ;; avoid flicker.  As a side effect, window-start/end in
                    ;; `isearch-lazy-highlight-update' will have incorrect values,
@@ -195,18 +188,38 @@ minibuffer."
                                                                 (current-buffer) t t))
                  (isearch-mb--update-prompt)
                  (isearch-mb--post-command-hook))
-             (read-from-minibuffer
-              "I-search: "
-              nil
-              isearch-mb-minibuffer-map
-              nil
-              (if isearch-regexp 'regexp-search-ring 'search-ring)
-              (thread-last '(region url symbol sexp line) ;; TODO: make customizable
-                (mapcar #'thing-at-point)
-                (delq nil)
-                (delete-dups)
-                (mapcar (if isearch-regexp 'regexp-quote 'identity)))
-              t))
+             (unwind-protect
+                 (progn
+                   ;; TODO move advice installation to extra function?
+                   (dolist (fun isearch-mb--after-exit)
+                     (advice-add fun :around #'isearch-mb--after-exit))
+                   (dolist (fun isearch-mb--with-buffer)
+                     (advice-add fun :around #'isearch-mb--with-buffer))
+                   (advice-add #'isearch--momentary-message :override #'isearch-mb--momentary-message)
+                   (advice-add #'isearch-pre-command-hook :override #'isearch-mb--disable-pre-command-hook)
+                   ;; Setting `isearch-message-function' currently disables lazy count,
+                   ;; so we need this workaround.
+                   (advice-add #'isearch-message :override #'isearch-mb--update-prompt)
+                   (read-from-minibuffer
+                    "I-search: "
+                    nil
+                    isearch-mb-minibuffer-map
+                    nil
+                    (if isearch-regexp 'regexp-search-ring 'search-ring)
+                    (thread-last '(region url symbol sexp line) ;; TODO: make customizable
+                      (mapcar #'thing-at-point)
+                      (delq nil)
+                      (delete-dups)
+                      (mapcar (if isearch-regexp 'regexp-quote 'identity)))
+                    t))
+               ;; TODO move advice removal to extra function?
+               (dolist (fun isearch-mb--after-exit)
+                 (advice-remove fun #'isearch-mb--after-exit))
+               (dolist (fun isearch-mb--with-buffer)
+                 (advice-remove fun #'isearch-mb--with-buffer))
+               (advice-remove #'isearch--momentary-message #'isearch-mb--momentary-message)
+               (advice-remove #'isearch-pre-command-hook #'isearch-mb--disable-pre-command-hook)
+               (advice-remove #'isearch-message #'isearch-mb--update-prompt)))
            (if isearch-mode '(isearch-done) '(ignore)))))
     (quit (if isearch-mode (isearch-cancel) (signal 'quit nil)))))
 
@@ -217,8 +230,9 @@ minibuffer."
     ;; more than once, hence the test for `isearch-mode'.
     (run-with-idle-timer 0 nil (lambda() (when isearch-mode (isearch-mb--session))))))
 
-(defun isearch-mb--pre-command-hook ()
-  isearch-mb--session)
+(defun isearch-mb--disable-pre-command-hook ()
+  "Disabled pre command hook."
+  nil)
 
 ;;;###autoload
 (define-minor-mode isearch-mb-mode
@@ -227,27 +241,9 @@ minibuffer."
 During an Isearch-Mb session, the following keys are available:
 \\{isearch-mb-minibuffer-map}"
   :global t
-  (cond
-   (isearch-mb-mode
-    (dolist (fun isearch-mb--after-exit)
-      (advice-add fun :around #'isearch-mb--after-exit))
-    (dolist (fun isearch-mb--with-buffer)
-      (advice-add fun :around #'isearch-mb--with-buffer))
-    (advice-add #'isearch--momentary-message :before-until #'isearch-mb--momentary-message)
-    (advice-add #'isearch-pre-command-hook :before-until #'isearch-mb--pre-command-hook)
-    ;; Setting `isearch-message-function' currently disables lazy count,
-    ;; so we need this workaround.
-    (advice-add #'isearch-message :override #'isearch-mb--update-prompt)
-    (add-hook 'isearch-mode-hook #'isearch-mb--setup))
-   (t
-    (dolist (fun isearch-mb--after-exit)
-      (advice-remove fun #'isearch-mb--after-exit))
-    (dolist (fun isearch-mb--with-buffer)
-      (advice-remove fun #'isearch-mb--with-buffer))
-    (advice-remove #'isearch--momentary-message #'isearch-mb--momentary-message)
-    (advice-remove #'isearch-pre-command-hook #'isearch-mb--pre-command-hook)
-    (advice-remove #'isearch-message #'isearch-mb--update-prompt)
-    (remove-hook 'isearch-mode-hook #'isearch-mb--setup))))
+  (if isearch-mb-mode
+      (add-hook 'isearch-mode-hook #'isearch-mb--setup)
+    (remove-hook 'isearch-mode-hook #'isearch-mb--setup)))
 
 (provide 'isearch-mb)
 ;;; isearch-mb.el ends here
