@@ -240,5 +240,37 @@ During an Isearch-Mb session, the following keys are available:
       (add-hook 'isearch-mode-hook #'isearch-mb--setup)
     (remove-hook 'isearch-mode-hook #'isearch-mb--setup)))
 
+;;; Fringe indicator
+
+(defvar isearch-mb--fringe-indicator (make-overlay 1 1))
+
+(defun isearch-mb--update-fringe-indicator ()
+  (pcase-let ((`(,arrow . ,pos)
+               (cond ((> (window-start) isearch-opoint)
+                      (cons 'up-arrow (window-start)))
+                     ((<= (window-end) isearch-opoint)
+                      (cons 'down-arrow (1- (window-end))))
+                     (t (cons 'left-arrow isearch-opoint)))))
+    (move-overlay isearch-mb--fringe-indicator pos pos (current-buffer))
+    (overlay-put isearch-mb--fringe-indicator
+                 'before-string
+                 (propertize "xxx"
+                           'display
+                           `(right-fringe
+                             ,arrow
+                             ,(if isearch-wrapped 'error 'fringe))))))
+
+(add-hook 'isearch-mode-end-hook
+          (lambda () (delete-overlay isearch-mb--fringe-indicator)))
+
+(define-minor-mode isearch-mb-fringe-indicator-mode
+  "Show search start and wrap status in the fringe."
+  :global t
+  (if isearch-mb-fringe-indicator-mode
+      (advice-add 'isearch-post-command-hook
+                  :after 'isearch-mb--update-fringe-indicator
+                  '((depth . 50)))
+    (advice-remove 'isearch-post-command-hook 'isearch-mb--update-fringe-indicator)))
+
 (provide 'isearch-mb)
 ;;; isearch-mb.el ends here
