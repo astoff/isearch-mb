@@ -246,17 +246,17 @@ During an Isearch-Mb session, the following keys are available:
 
 (defun isearch-mb--update-fringe-indicator ()
   (pcase-let ((`(,arrow . ,pos)
-               (cond ((> (window-start) isearch-opoint)
-                      (cons 'up-arrow (window-start)))
-                     ((<= (window-end) isearch-opoint)
-                      (cons 'down-arrow (1- (window-end))))
-                     (t (cons 'left-arrow isearch-opoint)))))
+               (cond ((> (line-beginning-position) isearch-opoint)
+                      (cons 'up-arrow (point)))
+                     ((<= (line-end-position) isearch-opoint)
+                      (cons 'down-arrow (point)))
+                     (t (cons 'right-arrow (point))))))
     (move-overlay isearch-mb--fringe-indicator pos pos (current-buffer))
     (overlay-put isearch-mb--fringe-indicator
                  'before-string
                  (propertize "xxx"
                            'display
-                           `(right-fringe
+                           `(left-fringe
                              ,arrow
                              ,(if isearch-wrapped 'error 'fringe))))))
 
