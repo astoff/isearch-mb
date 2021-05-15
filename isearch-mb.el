@@ -174,6 +174,8 @@ minibuffer."
       (apply
        (catch 'isearch-mb--continue
          (cl-letf (((cdr isearch-mode-map) nil)
+                   ((symbol-function #'isearch-pre-command-hook) #'ignore)
+                   ((symbol-function #'isearch--momentary-message) #'isearch-mb--momentary-message)
                    ;; We need to set `inhibit-redisplay' at certain points to
                    ;; avoid flicker.  As a side effect, window-start/end in
                    ;; `isearch-lazy-highlight-update' will have incorrect values,
@@ -194,8 +196,6 @@ minibuffer."
                      (advice-add fun :around #'isearch-mb--with-buffer))
                    (dolist (fun isearch-mb--after-exit)
                      (advice-add fun :around #'isearch-mb--after-exit))
-                   (advice-add #'isearch--momentary-message :override #'isearch-mb--momentary-message)
-                   (advice-add #'isearch-pre-command-hook :override #'ignore)
                    (read-from-minibuffer
                     "I-search: "
                     nil
@@ -211,9 +211,7 @@ minibuffer."
                (dolist (fun isearch-mb--after-exit)
                  (advice-remove fun #'isearch-mb--after-exit))
                (dolist (fun isearch-mb--with-buffer)
-                 (advice-remove fun #'isearch-mb--with-buffer))
-               (advice-remove #'isearch--momentary-message #'isearch-mb--momentary-message)
-               (advice-remove #'isearch-pre-command-hook #'ignore)))
+                 (advice-remove fun #'isearch-mb--with-buffer))))
            (if isearch-mode '(isearch-done) '(ignore)))))
     (quit (if isearch-mode (isearch-cancel) (signal 'quit nil)))))
 
