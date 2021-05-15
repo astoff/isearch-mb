@@ -178,6 +178,7 @@ minibuffer."
       (apply
        (catch 'isearch-mb--continue
          (cl-letf (((cdr isearch-mode-map) nil)
+                   (cursor-in-non-selected-windows (or cursor-in-non-selected-windows t))
                    ((symbol-function #'isearch-pre-command-hook) #'ignore)
                    ((symbol-function #'isearch--momentary-message) #'isearch-mb--message)
                    ;; Setting `isearch-message-function' currently disables lazy
