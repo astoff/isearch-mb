@@ -19,8 +19,8 @@ Keybindings
 During a search, `isearch-mb-minibuffer-map` is active.  By default,
 it includes the following commands:
 
-- <kbd>C-s</kbd>: `isearch-repeat-forward`
-- <kbd>C-r</kbd>: `isearch-repeat-backward`
+- <kbd>C-s</kbd>, <kbd>↓</kbd>: `isearch-repeat-forward`
+- <kbd>C-r</kbd>, <kbd>↑</kbd>: `isearch-repeat-backward`
 - <kbd>M-<</kbd>: `isearch-beginning-of-buffer`
 - <kbd>M-></kbd>: `isearch-end-of-buffer`
 - <kbd>M-%</kbd>: `isearch-query-replace`
@@ -71,35 +71,60 @@ strict whitespace matching with <kbd>M-s SPC</kbd> during a search.
 Interaction with other Isearch extensions
 -----------------------------------------
 
-Some third-party Isearch extensions need to be patched to work with
-Isearch-Mb.  There are three cases to consider:
+Some third-party Isearch extensions require a bit of configuration in
+order to work with Isearch-Mb.  There are three cases to consider:
 
 - **Commands that start a search** shouldn't require extra
   configuration.
-  
-- **Commands that operate during a search session** require the
-  `isearch-mb--with-buffer` advice.  Examples of this case are
-  [`loccur-isearch`][loccur] and [`consult-isearch`][consult]:
-  
-  ``` elisp
-  (advice-add 'loccur-isearch :around 'isearch-mb--with-buffer)
-  (define-key isearch-mb-minibuffer-map (kbd "C-o") 'loccur-isearch)
-  
-  (advice-add 'consult-isearch :around 'isearch-mb--with-buffer)
-  (define-key isearch-mb-minibuffer-map (kbd "M-r") 'consult-isearch)
-  ```
-  
-- **Commands that end the Isearch session** require the
-  `isearch-mb--after-exit` advice.  Examples of this case are
-  [`anzu-isearch-query-replace`][anzu] and
-  [`consult-line`][consult]:
+
+- **Commands that operate during a search session** should be added to
+  the list `isearch-mb--with-buffer`.  Examples of this case are
+  [`loccur-isearch`][loccur] and [`consult-isearch`][consult].
 
   ``` elisp
-  (advice-add 'anzu-isearch-query-replace :around 'isearch-mb--after-exit)
+  (add-to-list 'isearch-mb--with-buffer #'loccur-isearch)
+  (define-key isearch-mb-minibuffer-map (kbd "C-o") #'loccur-isearch)
+
+  (add-to-list 'isearch-mb--with-buffer #'consult-isearch)
+  (define-key isearch-mb-minibuffer-map (kbd "M-r") #'consult-isearch)
+  ```
+
+  Most Isearch commands that are not made available by default in
+  Isearch-Mb can also be used in this fashion:
+
+  ``` elisp
+  (add-to-list 'isearch-mb--with-buffer #'isearch-yank-word)
+  (define-key isearch-mb-minibuffer-map (kbd "M-s C-w") #'isearch-yank-word)
+  ```
+
+- **Commands that end the Isearch session** should be added to the
+  list `isearch-mb--after-exit`.  Examples of this case are
+  [`anzu-isearch-query-replace`][anzu] and [`consult-line`][consult]:
+
+  ``` elisp
+  (add-to-list 'isearch-mb--after-exit #'anzu-isearch-query-replace)
   (define-key isearch-mb-minibuffer-map (kbd "M-%") 'anzu-isearch-query-replace)
 
-  (advice-add 'consult-line :around 'isearch-mb--after-exit)
+  (add-to-list 'isearch-mb--after-exit #'consult-line)
   (define-key isearch-mb-minibuffer-map (kbd "M-s l") 'consult-line)
+  ```
+
+  Making motion commands quit the search as in standard Isearch is out
+  of the scope of this package, but can achieved with a bit of work.
+  Here is one possibility:
+
+  ```elisp
+  (defun move-end-of-line-maybe-ending-isearch (arg)
+  "End search and move to end of line, but only if already at the end of the minibuffer."
+    (interactive "p")
+    (if (eobp)
+        (isearch-mb--after-exit
+         (lambda ()
+           (move-end-of-line arg)
+           (isearch-done)))
+      (move-end-of-line arg)))
+
+  (define-key isearch-mb-minibuffer-map (kbd "C-e") 'move-end-of-line-maybe-ending-isearch)
   ```
 
 [consult]: https://github.com/minad/consult
