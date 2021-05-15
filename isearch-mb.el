@@ -38,9 +38,6 @@
   (require 'cl-lib)
   (require 'subr-x))
 
-(defvar isearch-mb--prompt-overlay nil
-  "Overlay for minibuffer prompt updates.")
-
 (defvar isearch-mb--with-buffer
   '(isearch-post-command-hook
     isearch-beginning-of-buffer
@@ -94,6 +91,9 @@
     map)
   "Minibuffer keymap used by Isearch-Mb.")
 
+(defvar isearch-mb--prompt-overlay nil
+  "Overlay for minibuffer prompt updates.")
+
 (defun isearch-mb--after-change (_beg _end _len)
   "Hook to run from the minibuffer to update the Isearch state."
   (let ((string (minibuffer-contents))
@@ -117,9 +117,11 @@
 
 (defun isearch-mb--post-command-hook ()
   "Hook to make the minibuffer reflect the Isearch state."
+  (unless isearch--current-buffer
+    (throw 'isearch-mb--continue '(ignore)))
   (let ((inhibit-modification-hooks t))
-    ;; We never update isearch-message.  If it's not empty, then
-    ;; Isearch on its own volition, and we update it.
+    ;; We never update `isearch-message'.  If it's not empty, then
+    ;; Isearch changed the search string on its own volition.
     (unless (string-empty-p isearch-message)
       (setq isearch-message "")
       (delete-minibuffer-contents)
@@ -157,13 +159,11 @@ Intended as an advice for Isearch commands."
       (let ((enable-recursive-minibuffers t)
             (inhibit-redisplay t))
         (with-minibuffer-selected-window
-          (apply args)
-          (unless isearch-mode
-            (throw 'isearch-mb--continue '(ignore)))))
+          (apply args)))
     (apply args)))
 
 (defun isearch-mb--after-exit (&rest args)
-  "Evaluate ARGS, after quitting Isearch-Mb.
+  "Evaluate ARGS after quitting Isearch-Mb.
 Intended as an advice for commands that quit Isearch and use the
 minibuffer."
   (throw 'isearch-mb--continue args))
@@ -222,7 +222,7 @@ minibuffer."
   (unless (minibufferp)
     ;; When `with-isearch-suspended' is involved, this hook may run
     ;; more than once, hence the test for `isearch-mode'.
-    (run-with-idle-timer 0 nil (lambda() (when isearch-mode (isearch-mb--session))))))
+    (run-with-idle-timer 0 nil (lambda () (when isearch-mode (isearch-mb--session))))))
 
 ;;;###autoload
 (define-minor-mode isearch-mb-mode
