@@ -240,37 +240,45 @@ During an Isearch-Mb session, the following keys are available:
       (add-hook 'isearch-mode-hook #'isearch-mb--setup)
     (remove-hook 'isearch-mode-hook #'isearch-mb--setup)))
 
-;;; Fringe indicator
+;;; Compass mode (fringe indicator)
 
-(defvar isearch-mb--fringe-indicator (make-overlay 1 1))
+(defvar isearch-mb--compass-point-ov nil)
+(defvar isearch-mb--compass-opoint-ov nil)
 
-(defun isearch-mb--update-fringe-indicator ()
-  (pcase-let ((`(,arrow . ,pos)
-               (cond ((> (line-beginning-position) isearch-opoint)
-                      (cons 'up-arrow (point)))
-                     ((<= (line-end-position) isearch-opoint)
-                      (cons 'down-arrow (point)))
-                     (t (cons 'right-arrow (point))))))
-    (move-overlay isearch-mb--fringe-indicator pos pos (current-buffer))
-    (overlay-put isearch-mb--fringe-indicator
-                 'before-string
-                 (propertize "xxx"
+(defun isearch-mb--compass-update ()
+  (move-overlay isearch-mb--compass-point-ov
+                (line-beginning-position) (point) (current-buffer))
+  (overlay-put isearch-mb--compass-point-ov
+               'before-string
+               (propertize "."
                            'display
-                           `(left-fringe
-                             ,arrow
-                             ,(if isearch-wrapped 'error 'fringe))))))
+                           `(right-fringe
+                             ,(if (> (point) isearch-opoint) 'up-arrow 'down-arrow)
+                             ,(if isearch-wrapped 'error 'success))))
+  (move-overlay isearch-mb--compass-opoint-ov
+                isearch-opoint isearch-opoint (current-buffer))
+  (overlay-put isearch-mb--compass-opoint-ov
+               'before-string
+               (propertize "." 'display '(right-fringe hollow-square))))
 
-(add-hook 'isearch-mode-end-hook
-          (lambda () (delete-overlay isearch-mb--fringe-indicator)))
+(defun isearch-mb--compass-cleanup ()
+  (delete-overlay isearch-mb--compass-point-ov)
+  (delete-overlay isearch-mb--compass-opoint-ov))
 
-(define-minor-mode isearch-mb-fringe-indicator-mode
+(define-minor-mode isearch-mb-compass-mode
   "Show search start and wrap status in the fringe."
   :global t
-  (if isearch-mb-fringe-indicator-mode
-      (advice-add 'isearch-post-command-hook
-                  :after 'isearch-mb--update-fringe-indicator
-                  '((depth . 50)))
-    (advice-remove 'isearch-post-command-hook 'isearch-mb--update-fringe-indicator)))
+  (if isearch-mb-compass-mode
+      (progn
+        (delete-overlay
+         (setq isearch-mb--compass-point-ov (make-overlay 1 1)))
+        (delete-overlay
+         (setq isearch-mb--compass-opoint-ov (make-overlay 1 1)))
+        (advice-add 'isearch-post-command-hook :after 'isearch-mb--compass-update)
+        (add-hook 'isearch-mode-end-hook 'isearch-mb--compass-cleanup))
+    (remove-hook 'isearch-mode-end-hook #'isearch-mb--compass-cleanup)
+    (advice-remove 'isearch-post-command-hook 'isearch-mb--update-fringe-indicator)
+    (isearch-mb--compass-cleanup)))
 
 (provide 'isearch-mb)
 ;;; isearch-mb.el ends here
