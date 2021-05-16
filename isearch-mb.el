@@ -79,7 +79,7 @@
     (define-key map "\C-j" #'newline)
     (define-key map "\C-s" #'isearch-repeat-forward)
     (define-key map "\C-r" #'isearch-repeat-backward)
-    (define-key map "\M-s#'" #'isearch-toggle-char-fold)
+    (define-key map "\M-s'" #'isearch-toggle-char-fold)
     (define-key map "\M-s " #'isearch-toggle-lax-whitespace)
     (define-key map "\M-s_" #'isearch-toggle-symbol)
     (define-key map "\M-sc" #'isearch-toggle-case-fold)
@@ -110,7 +110,7 @@
                    (condition-case err
                        (prog1 nil (string-match-p isearch-string ""))
                      (invalid-regexp
-                      (prog1 t (isearch-mb--momentary-message (cadr err)))))))
+                      (prog1 t (isearch-mb--message (cadr err)))))))
           (isearch-update)
         (goto-char isearch-barrier)
         (setq isearch-adjusted t isearch-success t)
@@ -133,9 +133,9 @@
                            (point-max)
                            '(face isearch-fail)))
     (when isearch-error
-      (isearch-mb--momentary-message isearch-error))))
+      (isearch-mb--message isearch-error))))
 
-(defun isearch-mb--momentary-message (message)
+(defun isearch-mb--message (message)
   "Display a momentary MESSAGE."
   (let ((message-log-max nil))
     (message (propertize (concat " [" message "]")
@@ -144,14 +144,17 @@
 (defun isearch-mb--update-prompt (&rest _)
   "Update the minibuffer prompt according to search status."
   (when isearch-mb--prompt-overlay
-    (overlay-put isearch-mb--prompt-overlay
-                 'before-string
-                 (concat
-                  (when isearch-lazy-count
-                    (format "%-6s" (isearch-lazy-count-format)))
-                  (capitalize
-                   (isearch--describe-regexp-mode
-                    isearch-regexp-function))))))
+    (let ((count (isearch-lazy-count-format))
+          (len (or (overlay-get isearch-mb--prompt-overlay 'isearch-mb--len) 0)))
+      (overlay-put isearch-mb--prompt-overlay
+                   'isearch-mb--len (max len (length count)))
+      (overlay-put isearch-mb--prompt-overlay
+                   'before-string
+                   (concat count ;; Count is padded so that it only grows.
+                           (make-string (max 0 (- len (length count))) ?\ )
+                           (capitalize
+                            (isearch--describe-regexp-mode
+                             isearch-regexp-function)))))))
 
 (defun isearch-mb--with-buffer (&rest args)
   "Evaluate ARGS in the search buffer.
@@ -176,7 +179,10 @@ minibuffer."
        (catch 'isearch-mb--continue
          (cl-letf (((cdr isearch-mode-map) nil)
                    ((symbol-function #'isearch-pre-command-hook) #'ignore)
-                   ((symbol-function #'isearch--momentary-message) #'isearch-mb--momentary-message)
+                   ((symbol-function #'isearch--momentary-message) #'isearch-mb--message)
+                   ;; Setting `isearch-message-function' currently disables lazy
+                   ;; count, so we need this as a workaround.
+                   ((symbol-function #'isearch-message) #'isearch-mb--update-prompt)
                    ;; We need to set `inhibit-redisplay' at certain points to
                    ;; avoid flicker.  As a side effect, window-start/end in
                    ;; `isearch-lazy-highlight-update' will have incorrect values,
@@ -230,16 +236,9 @@ minibuffer."
 During an Isearch-Mb session, the following keys are available:
 \\{isearch-mb-minibuffer-map}"
   :global t
-  (cond
-   (isearch-mb-mode
-    ;; Setting `isearch-message-function' currently disables lazy
-    ;; count, so we need this as a workaround.  Setting it later
-    ;; causes flicker in the echo area when starting Isearch.
-    (advice-add #'isearch-message :override #'isearch-mb--update-prompt)
-    (add-hook 'isearch-mode-hook #'isearch-mb--setup))
-   (t
-    (advice-remove #'isearch-message #'isearch-mb--update-prompt)
-    (remove-hook 'isearch-mode-hook #'isearch-mb--setup))))
+  (if isearch-mb-mode
+      (add-hook 'isearch-mode-hook #'isearch-mb--setup)
+    (remove-hook 'isearch-mode-hook #'isearch-mb--setup)))
 
 (provide 'isearch-mb)
 ;;; isearch-mb.el ends here
