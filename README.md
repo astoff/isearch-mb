@@ -5,13 +5,11 @@ This Emacs package provides an alternative Isearch UI based on the
 minibuffer.  This allows editing the search string in arbitrary ways
 without any special maneuver; unlike standard Isearch, cursor motion
 commands do not end the search.  Moreover, in comparison with standard
-Isearch, this package provides simplified visual feedback in the echo
-area.
+Isearch, the search status information in the echo area is simplified.
 
-To use the package, just add the following to your init file:
-``` elisp
-(isearch-mb-mode)
-```
+Isearch-Mb is part of [GNU ELPA] and can be installed via `M-x
+list-packages`.  To activate it, type `M-x isearch-mb-mode`.
+
 
 Keybindings
 -----------
@@ -110,8 +108,8 @@ order to work with Isearch-Mb.  There are three cases to consider:
   ```
 
   Making motion commands quit the search as in standard Isearch is out
-  of the scope of this package, but can achieved with a bit of work.
-  Here is one possibility:
+  of the scope of this package, but you can define your own commands
+  to emulate that effect.  Here is one possibility:
 
   ```elisp
   (defun move-end-of-line-maybe-ending-isearch (arg)
@@ -127,6 +125,7 @@ order to work with Isearch-Mb.  There are three cases to consider:
   (define-key isearch-mb-minibuffer-map (kbd "C-e") 'move-end-of-line-maybe-ending-isearch)
   ```
 
+[GNU ELPA]: https://elpa.gnu.org/
 [consult]: https://github.com/minad/consult
 [loccur]: https://github.com/fourier/loccur#isearch-integration
 [anzu]: https://github.com/emacsorphanage/anzu
