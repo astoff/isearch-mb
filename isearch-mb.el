@@ -1,6 +1,6 @@
 ;;; isearch-mb.el --- Control Isearch from the minibuffer -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2021 Augusto Stoffel
+;; Copyright (C) 2021  Free Software Foundation, Inc.
 
 ;; Author: Augusto Stoffel <arstoffel@gmail.com>
 ;; URL: https://github.com/astoff/isearch-mb
