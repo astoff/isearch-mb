@@ -1,14 +1,16 @@
-Isearch-Mb
+isearch-mb
 ==========
 
-This Emacs package provides an alternative Isearch UI based on the
+This Emacs package provides an alternative isearch UI based on the
 minibuffer.  This allows editing the search string in arbitrary ways
-without any special maneuver; unlike standard Isearch, cursor motion
-commands do not end the search.  Moreover, in comparison with standard
-Isearch, the search status information in the echo area is simplified.
+without any special maneuver; unlike standard isearch, cursor motion
+commands do not end the search.  Moreover, the search status
+information in the echo area and some keybindings are slightly
+simplified.
 
-Isearch-Mb is part of [GNU ELPA] and can be installed via `M-x
-list-packages`.  To activate it, type `M-x isearch-mb-mode`.
+isearch-mb is part of [GNU ELPA] and can be installed with `M-x
+package-install RET isearch-mb RET`.  To activate it, type `M-x
+isearch-mb-mode`.
 
 
 Keybindings
@@ -23,17 +25,17 @@ it includes the following commands:
 - <kbd>M-></kbd>: `isearch-end-of-buffer`
 - <kbd>M-%</kbd>: `isearch-query-replace`
 - <kbd>C-M-%</kbd>: `isearch-query-replace-regexp`
-- <kbd>M-s</kbd> prefix: similar to standard Isearch
+- <kbd>M-s</kbd> prefix: similar to standard isearch
 
-Everything else works as in a plain minibuffer, e.g. <kbd>RET</kbd>
-ends the search normally and <kbd>C-g</kbd> cancels it.
+Everything else works as in a plain minibuffer.  For instance,
+<kbd>RET</kbd> ends the search normally and <kbd>C-g</kbd> cancels it.
 
 Some customization ideas
 ------------------------
 
-Isearch provides a myriad of customization options, and most of them
-make just as much sense in Isearch-Mb mode.  The following are some
-uncontroversial settings that would make sense for most people:
+isearch provides a myriad of customization options, and most of them
+make just as much sense when using isearch-mb.  The following are some
+uncontroversial improvements of the defaults:
 
 ``` elisp
 (setq-default
@@ -44,7 +46,7 @@ uncontroversial settings that would make sense for most people:
  regexp-search-ring-max 200)
 ```
 
-Note that since Isearch-Mb relies on a regular minibuffer, you can use
+Note that since isearch-mb relies on a regular minibuffer, you can use
 you favorite tool to browse the history of previous search strings
 (say, the `consult-history` command from the excellent [Consult]
 package).
@@ -66,14 +68,14 @@ strict whitespace matching with <kbd>M-s SPC</kbd> during a search.
  search-whitespace-regexp ".*?")
 ```
 
-Interaction with other Isearch extensions
+Interaction with other isearch extensions
 -----------------------------------------
 
-Some third-party Isearch extensions require a bit of configuration in
-order to work with Isearch-Mb.  There are three cases to consider:
+Some third-party isearch extensions require a bit of configuration in
+order to work with isearch-mb.  There are three cases to consider:
 
-- **Commands that start a search** shouldn't require extra
-  configuration.
+- **Commands that start a search** in a special state shouldn't
+  require extra configuration.  This includes PDF Tools, Embark, etc.
 
 - **Commands that operate during a search session** should be added to
   the list `isearch-mb--with-buffer`.  Examples of this case are
@@ -87,15 +89,15 @@ order to work with Isearch-Mb.  There are three cases to consider:
   (define-key isearch-mb-minibuffer-map (kbd "M-r") #'consult-isearch)
   ```
 
-  Most Isearch commands that are not made available by default in
-  Isearch-Mb can also be used in this fashion:
+  Most isearch commands that are not made available by default in
+  isearch-mb can also be used in this fashion:
 
   ``` elisp
   (add-to-list 'isearch-mb--with-buffer #'isearch-yank-word)
   (define-key isearch-mb-minibuffer-map (kbd "M-s C-w") #'isearch-yank-word)
   ```
 
-- **Commands that end the Isearch session** should be added to the
+- **Commands that end the isearch session** should be added to the
   list `isearch-mb--after-exit`.  Examples of this case are
   [`anzu-isearch-query-replace`][anzu] and [`consult-line`][consult]:
 
@@ -107,7 +109,7 @@ order to work with Isearch-Mb.  There are three cases to consider:
   (define-key isearch-mb-minibuffer-map (kbd "M-s l") 'consult-line)
   ```
 
-  Making motion commands quit the search as in standard Isearch is out
+  Making motion commands quit the search as in standard isearch is out
   of the scope of this package, but you can define your own commands
   to emulate that effect.  Here is one possibility:
 
@@ -125,7 +127,7 @@ order to work with Isearch-Mb.  There are three cases to consider:
   (define-key isearch-mb-minibuffer-map (kbd "C-e") 'move-end-of-line-maybe-ending-isearch)
   ```
 
-[GNU ELPA]: https://elpa.gnu.org/
+[GNU ELPA]: https://elpa.gnu.org/packages/isearch-mb.html
 [consult]: https://github.com/minad/consult
 [loccur]: https://github.com/fourier/loccur#isearch-integration
 [anzu]: https://github.com/emacsorphanage/anzu
