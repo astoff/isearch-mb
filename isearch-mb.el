@@ -110,7 +110,7 @@
                    (condition-case err
                        (prog1 nil (string-match-p isearch-string ""))
                      (invalid-regexp
-                      (prog1 t (isearch-mb--message (cadr err)))))))
+                      (prog1 t (setq isearch-error (cadr err)))))))
           (isearch-update)
         (goto-char isearch-barrier)
         (setq isearch-adjusted t isearch-success t)
