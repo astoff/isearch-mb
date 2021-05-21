@@ -1,4 +1,4 @@
-;;; isearch-mb.el --- Control Isearch from the minibuffer -*- lexical-binding: t; -*-
+;;; isearch-mb.el --- Control isearch from the minibuffer -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2021  Free Software Foundation, Inc.
 
@@ -90,13 +90,13 @@
     (define-key map "\M-sr" #'isearch-toggle-regexp)
     (define-key map "\M-sw" #'isearch-toggle-word)
     map)
-  "Minibuffer keymap used by Isearch-Mb.")
+  "Minibuffer keymap used by isearch-mb.")
 
 (defvar isearch-mb--prompt-overlay nil
   "Overlay for minibuffer prompt updates.")
 
 (defun isearch-mb--after-change (_beg _end _len)
-  "Hook to run from the minibuffer to update the Isearch state."
+  "Hook to run from the minibuffer to update the isearch state."
   (let ((string (minibuffer-contents))
         (inhibit-redisplay t))
     (with-minibuffer-selected-window
@@ -117,12 +117,12 @@
         (isearch-search-and-update)))))
 
 (defun isearch-mb--post-command-hook ()
-  "Hook to make the minibuffer reflect the Isearch state."
+  "Hook to make the minibuffer reflect the isearch state."
   (unless isearch--current-buffer
     (throw 'isearch-mb--continue '(ignore)))
   (let ((inhibit-modification-hooks t))
     ;; We never update `isearch-message'.  If it's not empty, then
-    ;; Isearch changed the search string on its own volition.
+    ;; isearch changed the search string on its own volition.
     (unless (string-empty-p isearch-message)
       (setq isearch-message "")
       (delete-minibuffer-contents)
@@ -158,7 +158,7 @@
 
 (defun isearch-mb--with-buffer (&rest args)
   "Evaluate ARGS in the search buffer.
-Intended as an advice for Isearch commands."
+Intended as an advice for isearch commands."
   (if (minibufferp)
       (let ((enable-recursive-minibuffers t)
             (inhibit-redisplay t))
@@ -167,8 +167,8 @@ Intended as an advice for Isearch commands."
     (apply args)))
 
 (defun isearch-mb--after-exit (&rest args)
-  "Evaluate ARGS after quitting Isearch-Mb.
-Intended as an advice for commands that quit Isearch and use the
+  "Evaluate ARGS after quitting isearch-mb.
+Intended as an advice for commands that quit isearch and use the
 minibuffer."
   (throw 'isearch-mb--continue args))
 
@@ -223,7 +223,7 @@ minibuffer."
     (quit (if isearch-mode (isearch-cancel) (signal 'quit nil)))))
 
 (defun isearch-mb--setup ()
-  "Arrange to start Isearch-Mb after this command, if applicable."
+  "Arrange to start isearch-mb after this command, if applicable."
   (unless (minibufferp)
     ;; When `with-isearch-suspended' is involved, this hook may run
     ;; more than once, hence the test for `isearch-mode'.
@@ -231,9 +231,9 @@ minibuffer."
 
 ;;;###autoload
 (define-minor-mode isearch-mb-mode
-  "Control Isearch from the minibuffer.
+  "Control isearch from the minibuffer.
 
-During an Isearch-Mb session, the following keys are available:
+During an isearch-mb session, the following keys are available:
 \\{isearch-mb-minibuffer-map}"
   :global t
   (if isearch-mb-mode
