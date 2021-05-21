@@ -187,11 +187,15 @@ minibuffer."
                    ;; avoid flicker.  As a side effect, window-start/end in
                    ;; `isearch-lazy-highlight-update' will have incorrect values,
                    ;; so we need to lazy-highlight the whole buffer.
-                   (lazy-highlight-buffer (not (null isearch-lazy-highlight))))
+                   (lazy-highlight-buffer (not (null isearch-lazy-highlight)))
+                   (wstart nil))
            (minibuffer-with-setup-hook
                (lambda ()
                  (add-hook 'after-change-functions #'isearch-mb--after-change nil 'local)
                  (add-hook 'post-command-hook #'isearch-mb--post-command-hook nil 'local)
+                 (add-hook 'minibuffer-exit-hook
+                           (lambda () (setq wstart (window-start (minibuffer-selected-window))))
+                           nil 'local)
                  (setq-local tool-bar-map isearch-tool-bar-map)
                  (setq isearch-mb--prompt-overlay (make-overlay (point-min) (point-min)
                                                                 (current-buffer) t t))
@@ -215,6 +219,8 @@ minibuffer."
                       (delete-dups)
                       (mapcar (if isearch-regexp 'regexp-quote 'identity)))
                     t))
+               ;; Undo a possible recenter after quitting the minibuffer.
+               (set-window-start nil wstart)
                (dolist (fun isearch-mb--after-exit)
                  (advice-remove fun #'isearch-mb--after-exit))
                (dolist (fun isearch-mb--with-buffer)
