@@ -58,10 +58,10 @@
 
 (defvar isearch-mb--after-exit
   '(isearch-query-replace
-   isearch-query-replace-regexp
-   isearch-highlight-regexp
-   isearch-highlight-lines-matching-regexp
-   isearch-abort)
+    isearch-query-replace-regexp
+    isearch-highlight-regexp
+    isearch-highlight-lines-matching-regexp
+    isearch-abort)
   "List of commands to execute after exiting the minibuffer.")
 
 (defvar isearch-mb--no-search
