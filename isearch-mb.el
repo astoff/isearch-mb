@@ -218,9 +218,9 @@ minibuffer."
                       (delq nil)
                       (delete-dups)
                       (mapcar (if isearch-regexp 'regexp-quote 'identity)))
-                    t))
-               ;; Undo a possible recenter after quitting the minibuffer.
-               (set-window-start nil wstart)
+                    t)
+                   ;; Undo a possible recenter after quitting the minibuffer.
+                   (set-window-start nil wstart))
                (dolist (fun isearch-mb--after-exit)
                  (advice-remove fun #'isearch-mb--after-exit))
                (dolist (fun isearch-mb--with-buffer)
