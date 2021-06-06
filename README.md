@@ -1,6 +1,8 @@
 isearch-mb
 ==========
 
+<a href="http://elpa.gnu.org/packages/isearch-mb.html"><img alt="GNU ELPA" src="https://elpa.gnu.org/packages/isearch-mb.svg"/></a>
+
 This Emacs package provides an alternative isearch UI based on the
 minibuffer.  This allows editing the search string in arbitrary ways
 without any special maneuver; unlike standard isearch, cursor motion
@@ -10,8 +12,7 @@ simplified.
 
 isearch-mb is part of [GNU ELPA] and can be installed with `M-x
 package-install RET isearch-mb RET`.  To activate it, type `M-x
-isearch-mb-mode`.
-
+isearch-mb-mode RET`.
 
 Keybindings
 -----------
@@ -39,7 +40,7 @@ uncontroversial improvements of the defaults:
 
 ``` elisp
 (setq-default
- ;; Match count next to minibuffer prompt
+ ;; Match count next to the minibuffer prompt
  isearch-lazy-count t
  ;; Don't be stingy with history; default is to keep just 16 entries
  search-ring-max 200
