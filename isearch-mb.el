@@ -38,6 +38,10 @@
   (require 'cl-lib)
   (require 'subr-x))
 
+(defgroup isearch-mb nil
+  "Control isearch from the minibuffer."
+  :group 'isearch)
+
 (defvar isearch-mb--with-buffer
   '(isearch-post-command-hook
     isearch-beginning-of-buffer
