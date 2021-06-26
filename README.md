@@ -128,6 +128,13 @@ order to work with isearch-mb.  There are three cases to consider:
   (define-key isearch-mb-minibuffer-map (kbd "C-e") 'move-end-of-line-maybe-ending-isearch)
   ```
 
+Contributing
+------------
+
+Discussions, suggestions and code contributions are welcome!  Since
+this package is part of GNU ELPA, nontrivial contributions (above 15
+lines of code) require a copyright assignment to the FSF.
+
 [GNU ELPA]: https://elpa.gnu.org/packages/isearch-mb.html
 [consult]: https://github.com/minad/consult
 [loccur]: https://github.com/fourier/loccur#isearch-integration
