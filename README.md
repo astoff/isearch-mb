@@ -69,6 +69,14 @@ strict whitespace matching with <kbd>M-s SPC</kbd> during a search.
  search-whitespace-regexp ".*?")
 ```
 
+Isearch-mb offers an user option for showing case-fold information in the
+prompt, which can be useful if you are not sure about it, especially after
+calling `isearch-toggle-case-fold` several times:
+
+``` elisp
+(setq isearch-mb-show-case-fold-info t)
+```
+
 Interaction with other isearch extensions
 -----------------------------------------
 

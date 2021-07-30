@@ -42,6 +42,10 @@
   "Control isearch from the minibuffer."
   :group 'isearch)
 
+(defcustom isearch-mb-show-case-fold-info nil
+  "Non-nil means to show case fold info in the prompt."
+  :type 'string)
+
 (defvar isearch-mb--with-buffer
   '(isearch-beginning-of-buffer
     isearch-end-of-buffer
@@ -155,6 +159,9 @@
                    'before-string
                    (concat count ;; Count is padded so that it only grows.
                            (make-string (max 0 (- len (length count))) ?\ )
+                           (if isearch-mb-show-case-fold-info
+                               (if isearch-case-fold-search "[Case Fold] " "")
+                             "")
                            (capitalize
                             (isearch--describe-regexp-mode
                              isearch-regexp-function)))))))
