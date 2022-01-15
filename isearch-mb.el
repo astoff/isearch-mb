@@ -217,13 +217,13 @@ minibuffer."
                     isearch-mb-minibuffer-map
                     nil
                     (if isearch-regexp 'regexp-search-ring 'search-ring)
-                    (thread-last (if (boundp isearch-forward-thing-at-point)
+                    (thread-last (if (boundp 'isearch-forward-thing-at-point)
                                      isearch-forward-thing-at-point
                                      '(region url symbol sexp))
-                      (mapcar #'thing-at-point)
-                      (delq nil)
-                      (delete-dups)
-                      (mapcar (if isearch-regexp 'regexp-quote 'identity)))
+                                 (mapcar #'thing-at-point)
+                                 (delq nil)
+                                 (delete-dups)
+                                 (mapcar (if isearch-regexp 'regexp-quote 'identity)))
                     t)
                    ;; Undo a possible recenter after quitting the minibuffer.
                    (set-window-start nil wstart))
