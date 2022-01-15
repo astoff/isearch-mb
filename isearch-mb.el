@@ -42,13 +42,14 @@
   "Control isearch from the minibuffer."
   :group 'isearch)
 
-(defcustom isearch-mb-thing-at-point '(region url symbol sexp line)
-  "A list of symbols to try to get the \"thing\" at point.
+(unless (boundp 'isearch-forward-thing-at-point)
+  (defcustom isearch-forward-thing-at-point '(region url symbol sexp)
+    "A list of symbols to try to get the \"thing\" at point.
 Each element of the list should be one of the symbols supported by
-`bounds-of-thing-at-point'.  This variable is used by isearch-mb
-to yank the initial \"thing\" as text to the search string."
-  :group 'isearch-mb
-  :type '(repeat (symbol :tag "Thing symbol")))
+`bounds-of-thing-at-point'.  This variable is used by the command
+`isearch-forward-thing-at-point' to yank the initial \"thing\"
+as text to the search string."
+    :type '(repeat (symbol :tag "Thing symbol"))))
 
 (defvar isearch-mb--with-buffer
   '(isearch-beginning-of-buffer
