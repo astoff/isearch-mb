@@ -42,15 +42,6 @@
   "Control isearch from the minibuffer."
   :group 'isearch)
 
-(unless (boundp 'isearch-forward-thing-at-point)
-  (defcustom isearch-forward-thing-at-point '(region url symbol sexp)
-    "A list of symbols to try to get the \"thing\" at point.
-Each element of the list should be one of the symbols supported by
-`bounds-of-thing-at-point'.  This variable is used by the command
-`isearch-forward-thing-at-point' to yank the initial \"thing\"
-as text to the search string."
-    :type '(repeat (symbol :tag "Thing symbol"))))
-
 (defvar isearch-mb--with-buffer
   '(isearch-beginning-of-buffer
     isearch-end-of-buffer
@@ -226,11 +217,13 @@ minibuffer."
                     isearch-mb-minibuffer-map
                     nil
                     (if isearch-regexp 'regexp-search-ring 'search-ring)
-                    (thread-last isearch-forward-thing-at-point
-                                 (mapcar #'thing-at-point)
-                                 (delq nil)
-                                 (delete-dups)
-                                 (mapcar (if isearch-regexp 'regexp-quote 'identity)))
+                    (thread-last (if (boundp isearch-forward-thing-at-point)
+                                     isearch-forward-thing-at-point
+                                     '(region url symbol sexp))
+                      (mapcar #'thing-at-point)
+                      (delq nil)
+                      (delete-dups)
+                      (mapcar (if isearch-regexp 'regexp-quote 'identity)))
                     t)
                    ;; Undo a possible recenter after quitting the minibuffer.
                    (set-window-start nil wstart))
