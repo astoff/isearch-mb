@@ -225,11 +225,11 @@ minibuffer."
                     isearch-mb-minibuffer-map
                     nil
                     (if isearch-regexp 'regexp-search-ring 'search-ring)
-                    (thread-last isearch-mb-thing-at-point
-                      (mapcar #'thing-at-point)
-                      (delq nil)
-                      (delete-dups)
-                      (mapcar (if isearch-regexp 'regexp-quote 'identity)))
+                    (thread-last isearch-forward-thing-at-point
+                                 (mapcar #'thing-at-point)
+                                 (delq nil)
+                                 (delete-dups)
+                                 (mapcar (if isearch-regexp 'regexp-quote 'identity)))
                     t)
                    ;; Undo a possible recenter after quitting the minibuffer.
                    (set-window-start nil wstart))
