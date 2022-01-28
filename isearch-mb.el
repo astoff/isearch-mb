@@ -163,7 +163,9 @@
   "Add default search strings to future history."
   (setq minibuffer-default
         (with-minibuffer-selected-window
-          (thread-last '(region url symbol sexp line) ;; TODO: make customizable
+          (thread-last (if (boundp 'isearch-forward-thing-at-point)
+                           isearch-forward-thing-at-point ;; Introduced in Emacs 28
+                         '(region url symbol sexp))
             (mapcar #'thing-at-point)
             (delq nil)
             (delete-dups)
