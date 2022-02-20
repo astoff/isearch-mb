@@ -43,8 +43,10 @@
   :group 'isearch)
 
 (defvar isearch-mb--with-buffer
-  '(isearch-beginning-of-buffer
-    isearch-end-of-buffer
+  '(beginning-of-buffer
+    end-of-buffer
+    scroll-up-command
+    scroll-down-command
     isearch-occur
     isearch-repeat-backward
     isearch-repeat-forward
@@ -75,8 +77,7 @@
   (let ((map (make-composed-keymap nil minibuffer-local-map)))
     (define-key map [remap next-line-or-history-element] #'isearch-repeat-forward)
     (define-key map [remap previous-line-or-history-element] #'isearch-repeat-backward)
-    (define-key map [remap minibuffer-beginning-of-buffer] #'isearch-beginning-of-buffer)
-    (define-key map [remap end-of-buffer] #'isearch-end-of-buffer)
+    (define-key map [remap minibuffer-beginning-of-buffer] #'beginning-of-buffer)
     (define-key map [remap query-replace] #'isearch-query-replace)
     (define-key map [remap query-replace-regexp] #'isearch-query-replace-regexp)
     (define-key map "\C-j" #'newline)
@@ -97,6 +98,11 @@
 
 (defvar isearch-mb--prompt-overlay nil
   "Overlay for minibuffer prompt updates.")
+
+;; Variables introduced in Emacs 28
+(defvar isearch-motion-changes-direction nil)
+(defvar isearch-repeat-on-direction-change nil)
+(defvar isearch-forward-thing-at-point '(region url symbol sexp))
 
 (defun isearch-mb--after-change (_beg _end _len)
   "Hook to run from the minibuffer to update the isearch state."
@@ -163,9 +169,7 @@
   "Add default search strings to future history."
   (setq minibuffer-default
         (with-minibuffer-selected-window
-          (thread-last (if (boundp 'isearch-forward-thing-at-point)
-                           isearch-forward-thing-at-point ;; Introduced in Emacs 28
-                         '(region url symbol sexp))
+          (thread-last isearch-forward-thing-at-point
             (mapcar #'thing-at-point)
             (delq nil)
             (delete-dups)
@@ -178,7 +182,20 @@ Intended as an advice for isearch commands."
       (let ((enable-recursive-minibuffers t)
             (inhibit-redisplay t))
         (with-minibuffer-selected-window
-          (apply args)))
+          (if-let ((motion (and (symbolp this-command)
+                                (get this-command 'isearch-motion)))
+                   (direction (cdr motion))
+                   (current-direction (if isearch-forward 'forward 'backward)))
+              (progn ;; Handle special motion commands, as in `isearch-pre-command-hook'.
+                (funcall (car motion))
+                (setq isearch-just-started t)
+                (let ((isearch-repeat-on-direction-change nil))
+                  (isearch-repeat direction)
+                  (when (and isearch-success
+                             (not isearch-motion-changes-direction)
+                             (not (eq direction current-direction)))
+                    (isearch-repeat current-direction))))
+            (apply args))))
     (apply args)))
 
 (defun isearch-mb--after-exit (&rest args)
