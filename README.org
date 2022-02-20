@@ -20,8 +20,10 @@ includes the following commands:
 
 - =C-s=, =↓=: =isearch-repeat-forward=
 - =C-r=, =↑=: =isearch-repeat-backward=
-- =M-<=: =isearch-beginning-of-buffer=
-- =M->=: =isearch-end-of-buffer=
+- =M-<=: =beginning-of-buffer= (in the search buffer)
+- =M->=: =end-of-buffer= (in the search buffer)
+- =M-v=, =<prior>=: =scroll-down-command= (in the search buffer)
+- =C-v=, =<next>=: =scroll-up-command= (in the search buffer)
 - =M-%=: =isearch-query-replace=
 - =C-M-%=: =isearch-query-replace-regexp=
 - =M-s= prefix: similar to standard isearch
@@ -57,8 +59,9 @@ Using regexp search by default is a popular option as well:
 #+end_example
 
 For a Swiper-style fuzzy search, where spaces match any sequence of
-characters in a line, use the settings below. You can still toggle
-strict whitespace matching with M-s SPC during a search.
+characters in a line, use the settings below.  You can still toggle
+strict whitespace matching with =M-s SPC= during a search, or escape a
+space with a backslash to match it literally.
 
 #+begin_example emacs-lisp
   (setq-default
