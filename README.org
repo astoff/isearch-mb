@@ -37,14 +37,14 @@ isearch provides a myriad of customization options, and most of them
 make just as much sense when using isearch-mb. The following are some
 uncontroversial improvements of the defaults:
 
-#+begin_example emacs-lisp
+#+begin_src emacs-lisp
   (setq-default
    ;; Match count next to the minibuffer prompt
    isearch-lazy-count t
    ;; Don't be stingy with history; default is to keep just 16 entries
    search-ring-max 200
    regexp-search-ring-max 200)
-#+end_example
+#+end_src
 
 Note that since isearch-mb relies on a regular minibuffer, you can use
 you favorite tool to browse the history of previous search strings
@@ -53,21 +53,21 @@ package).
 
 Using regexp search by default is a popular option as well:
 
-#+begin_example emacs-lisp
+#+begin_src emacs-lisp
   (global-set-key (kbd "C-s") 'isearch-forward-regexp)
   (global-set-key (kbd "C-r") 'isearch-backward-regexp)
-#+end_example
+#+end_src
 
 For a Swiper-style fuzzy search, where spaces match any sequence of
 characters in a line, use the settings below.  You can still toggle
 strict whitespace matching with =M-s SPC= during a search, or escape a
 space with a backslash to match it literally.
 
-#+begin_example emacs-lisp
+#+begin_src emacs-lisp
   (setq-default
    isearch-regexp-lax-whitespace t
    search-whitespace-regexp ".*?")
-#+end_example
+#+end_src
 
 * Interaction with other isearch extensions
 
@@ -81,39 +81,39 @@ order to work with isearch-mb. There are three cases to consider:
   the list =isearch-mb--with-buffer=. Examples of this case are
   [[https://github.com/fourier/loccur#isearch-integration][=loccur-isearch=]] and [[https://github.com/minad/consult][=consult-isearch=]].
 
-  #+begin_example emacs-lisp
+  #+begin_src emacs-lisp
     (add-to-list 'isearch-mb--with-buffer #'loccur-isearch)
     (define-key isearch-mb-minibuffer-map (kbd "C-o") #'loccur-isearch)
 
     (add-to-list 'isearch-mb--with-buffer #'consult-isearch)
     (define-key isearch-mb-minibuffer-map (kbd "M-r") #'consult-isearch)
-  #+end_example
+  #+end_src
 
   Most isearch commands that are not made available by default in
   isearch-mb can also be used in this fashion:
 
-  #+begin_example emacs-lisp
+  #+begin_src emacs-lisp
     (add-to-list 'isearch-mb--with-buffer #'isearch-yank-word)
     (define-key isearch-mb-minibuffer-map (kbd "M-s C-w") #'isearch-yank-word)
-  #+end_example
+  #+end_src
 
 - *Commands that end the isearch session* should be added to the list
   =isearch-mb--after-exit=. Examples of this case are
   [[https://github.com/emacsorphanage/anzu][=anzu-isearch-query-replace=]] and [[https://github.com/minad/consult][=consult-line=]]:
 
-  #+begin_example emacs-lisp
+  #+begin_src emacs-lisp
     (add-to-list 'isearch-mb--after-exit #'anzu-isearch-query-replace)
     (define-key isearch-mb-minibuffer-map (kbd "M-%") 'anzu-isearch-query-replace)
 
     (add-to-list 'isearch-mb--after-exit #'consult-line)
     (define-key isearch-mb-minibuffer-map (kbd "M-s l") 'consult-line)
-  #+end_example
+  #+end_src
 
   Making motion commands quit the search as in standard isearch is out
   of the scope of this package, but you can define your own commands
   to emulate that effect. Here is one possibility:
 
-  #+begin_example emacs-lisp
+  #+begin_src emacs-lisp
     (defun move-end-of-line-maybe-ending-isearch (arg)
     "End search and move to end of line, but only if already at the end of the minibuffer."
       (interactive "p")
@@ -125,7 +125,7 @@ order to work with isearch-mb. There are three cases to consider:
         (move-end-of-line arg)))
 
     (define-key isearch-mb-minibuffer-map (kbd "C-e") 'move-end-of-line-maybe-ending-isearch)
-  #+end_example
+  #+end_src
 
 * Contributing
 
