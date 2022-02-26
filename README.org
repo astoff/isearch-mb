@@ -69,6 +69,9 @@ space with a backslash to match it literally.
    search-whitespace-regexp ".*?")
 #+end_src
 
+Finally, you may want to check out the [[https://github.com/astoff/isearch-mb/wiki][isearch-mb wiki]] for additional
+tips and tricks.
+
 * Interaction with other isearch extensions
 
 Some third-party isearch extensions require a bit of configuration in
