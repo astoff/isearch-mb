@@ -206,6 +206,7 @@ minibuffer."
 
 (defun isearch-mb--session ()
   "Read search string from the minibuffer."
+  (setq overriding-terminal-local-map nil)
   (condition-case nil
       (apply
        (catch 'isearch-mb--continue
