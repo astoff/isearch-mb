@@ -206,13 +206,13 @@ minibuffer."
 
 (defun isearch-mb--session ()
   "Read search string from the minibuffer."
+  (remove-hook 'pre-command-hook 'isearch-pre-command-hook)
+  (remove-hook 'post-command-hook 'isearch-post-command-hook)
   (setq overriding-terminal-local-map nil)
   (condition-case nil
       (apply
        (catch 'isearch-mb--continue
          (cl-letf (((cdr isearch-mode-map) nil)
-                   ((symbol-function #'isearch-pre-command-hook) #'ignore)
-                   ((symbol-function #'isearch-post-command-hook) #'ignore)
                    ((symbol-function #'isearch--momentary-message) #'isearch-mb--message)
                    ;; Setting `isearch-message-function' currently disables lazy
                    ;; count, so we need this as a workaround.
