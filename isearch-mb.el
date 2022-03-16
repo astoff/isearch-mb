@@ -43,10 +43,8 @@
   :group 'isearch)
 
 (defvar isearch-mb--with-buffer
-  '(beginning-of-buffer
-    end-of-buffer
-    scroll-up-command
-    scroll-down-command
+  '(isearch-beginning-of-buffer
+    isearch-end-of-buffer
     isearch-occur
     isearch-repeat-backward
     isearch-repeat-forward
@@ -77,7 +75,10 @@
   (let ((map (make-composed-keymap nil minibuffer-local-map)))
     (define-key map [remap next-line-or-history-element] #'isearch-repeat-forward)
     (define-key map [remap previous-line-or-history-element] #'isearch-repeat-backward)
-    (define-key map [remap minibuffer-beginning-of-buffer] #'beginning-of-buffer)
+    (define-key map [remap minibuffer-beginning-of-buffer] #'isearch-beginning-of-buffer)
+    (define-key map [remap end-of-buffer] #'isearch-end-of-buffer)
+    (define-key map [remap scroll-up-command] 'isearch-mb-scroll-up-command)
+    (define-key map [remap scroll-down-command] 'isearch-mb-scroll-down-command)
     (define-key map [remap query-replace] #'isearch-query-replace)
     (define-key map [remap query-replace-regexp] #'isearch-query-replace-regexp)
     (define-key map "\C-j" #'newline)
@@ -182,21 +183,27 @@ Intended as an advice for isearch commands."
       (let ((enable-recursive-minibuffers t)
             (inhibit-redisplay t))
         (with-minibuffer-selected-window
-          (if-let ((motion (and (symbolp this-command)
-                                (get this-command 'isearch-motion)))
-                   (direction (cdr motion))
-                   (current-direction (if isearch-forward 'forward 'backward)))
-              (progn ;; Handle special motion commands, as in `isearch-pre-command-hook'.
-                (funcall (car motion))
-                (setq isearch-just-started t)
-                (let ((isearch-repeat-on-direction-change nil))
-                  (isearch-repeat direction)
-                  (when (and isearch-success
-                             (not isearch-motion-changes-direction)
-                             (not (eq direction current-direction)))
-                    (isearch-repeat current-direction))))
-            (apply args))))
+          (apply args)))
     (apply args)))
+
+;; Special motion commands normally handled in `isearch-pre-command-hook'.
+(dolist (symbol '(scroll-up-command scroll-down-command))
+  (defalias (intern (concat "isearch-mb-" (symbol-name symbol)))
+    (let ((fun (pcase (get symbol 'isearch-motion)
+                 (`(,motion . ,direction)
+                  (lambda ()
+                    (let ((current-direction (if isearch-forward 'forward 'backward)))
+                      (funcall motion)
+                      (setq isearch-just-started t)
+                      (let ((isearch-repeat-on-direction-change nil))
+                        (isearch-repeat direction)
+                        (when (and isearch-success
+                                   (not isearch-motion-changes-direction)
+                                   (not (eq direction current-direction)))
+                          (isearch-repeat current-direction))))))
+                 (_ symbol)))) ;; Emacs < 28
+      (lambda () (interactive) (isearch-mb--with-buffer fun)))
+    (format "Perform motion of `%s' in the search buffer." symbol)))
 
 (defun isearch-mb--after-exit (&rest args)
   "Evaluate ARGS after quitting isearch-mb.

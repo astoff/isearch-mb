@@ -18,15 +18,15 @@ isearch-mb-mode RET=.
 During a search, =isearch-mb-minibuffer-map= is active. By default, it
 includes the following commands:
 
-- =C-s=, =↓=: =isearch-repeat-forward=
-- =C-r=, =↑=: =isearch-repeat-backward=
-- =M-<=: =beginning-of-buffer= (in the search buffer)
-- =M->=: =end-of-buffer= (in the search buffer)
-- =M-v=, =<prior>=: =scroll-down-command= (in the search buffer)
-- =C-v=, =<next>=: =scroll-up-command= (in the search buffer)
-- =M-%=: =isearch-query-replace=
-- =C-M-%=: =isearch-query-replace-regexp=
-- =M-s= prefix: similar to standard isearch
+- =C-s=, =↓=: Repeat search forwards.
+- =C-r=, =↑=: Repeat search backwards.
+- =M-<=: Go to first match (or /n/-th match with numeric argument).
+- =M->=: Go to last match (or /n/-th last match with numeric argument).
+- =C-v=, =<next>=: Search forward from the bottom of the window.
+- =M-v=, =<prior>=: Search backward from the top of the window.
+- =M-%=: Replace occurrences of the search string.
+- =C-M-%=: Replace occurrences of the search string (regexp mode).
+- =M-s= prefix: similar to standard isearch.
 
 Everything else works as in a plain minibuffer. For instance, =RET=
 ends the search normally and =C-g= cancels it.
