@@ -1,6 +1,6 @@
 #+title: isearch-mb --- Control isearch from the minibuffer
 
-#+html: <a href="http://elpa.gnu.org/packages/isearch-mb.html"><img alt="GNU ELPA" src="https://elpa.gnu.org/packages/isearch-mb.svg"/></a>
+#+html: <p align="center"><a href="http://elpa.gnu.org/packages/isearch-mb.html"><img alt="GNU ELPA" src="https://elpa.gnu.org/packages/isearch-mb.svg"/></a></p>
 
 This Emacs package provides an alternative isearch UI based on the
 minibuffer. This allows editing the search string in arbitrary ways
@@ -13,7 +13,7 @@ isearch-mb is part of [[https://elpa.gnu.org/packages/isearch-mb.html][GNU ELPA]
 package-install RET isearch-mb RET=. To activate it, type =M-x
 isearch-mb-mode RET=.
 
-* Keybindings
+** Keybindings
 
 During a search, =isearch-mb-minibuffer-map= is active. By default, it
 includes the following commands:
@@ -31,7 +31,7 @@ includes the following commands:
 Everything else works as in a plain minibuffer. For instance, =RET=
 ends the search normally and =C-g= cancels it.
 
-* Some customization ideas
+** Some customization ideas
 
 isearch provides a myriad of customization options, and most of them
 make just as much sense when using isearch-mb. The following are some
@@ -58,21 +58,24 @@ Using regexp search by default is a popular option as well:
   (global-set-key (kbd "C-r") 'isearch-backward-regexp)
 #+end_src
 
-For a Swiper-style fuzzy search, where spaces match any sequence of
-characters in a line, use the settings below.  You can still toggle
-strict whitespace matching with =M-s SPC= during a search, or escape a
-space with a backslash to match it literally.
+Another handy option is to enable lax whitespace matching in one of
+the two variations indicated below.  You can still toggle strict
+whitespace matching with =M-s SPC= during a search, or escape a space
+with a backslash to match it literally.
 
 #+begin_src emacs-lisp
   (setq-default
    isearch-regexp-lax-whitespace t
-   search-whitespace-regexp ".*?")
+   ;; Swiper style: space matches any sequence of characters in a line.
+   search-whitespace-regexp ".*?"
+   ;; Alternative: space matches whitespace, newlines and punctuation.
+   search-whitespace-regexp "\\W+")
 #+end_src
 
 Finally, you may want to check out the [[https://github.com/astoff/isearch-mb/wiki][isearch-mb wiki]] for additional
 tips and tricks.
 
-* Interaction with other isearch extensions
+** Interaction with other isearch extensions
 
 Some third-party isearch extensions require a bit of configuration in
 order to work with isearch-mb. There are three cases to consider:
@@ -130,8 +133,8 @@ order to work with isearch-mb. There are three cases to consider:
     (define-key isearch-mb-minibuffer-map (kbd "C-e") 'move-end-of-line-maybe-ending-isearch)
   #+end_src
 
-* Contributing
+** Contributing
 
 Discussions, suggestions and code contributions are welcome! Since
-this package is part of GNU ELPA, nontrivial contributions (above 15
-lines of code) require a copyright assignment to the FSF.
+this package is part of GNU ELPA, contributions require a copyright
+assignment to the FSF.
