@@ -225,11 +225,6 @@ minibuffer."
                    ;; count, so we need this as a workaround.
                    ((symbol-function #'isearch-message) #'isearch-mb--update-prompt)
                    (minibuffer-default-add-function #'isearch-mb--add-defaults)
-                   ;; We need to set `inhibit-redisplay' at certain points to
-                   ;; avoid flicker.  As a side effect, window-start/end in
-                   ;; `isearch-lazy-highlight-update' will have incorrect values,
-                   ;; so we need to lazy-highlight the whole buffer.
-                   (lazy-highlight-buffer (not (null isearch-lazy-highlight)))
                    (wstart nil))
            (minibuffer-with-setup-hook
                (lambda ()
@@ -275,9 +270,19 @@ minibuffer."
 During an isearch-mb session, the following keys are available:
 \\{isearch-mb-minibuffer-map}"
   :global t
-  (if isearch-mb-mode
-      (add-hook 'isearch-mode-hook #'isearch-mb--setup)
-    (remove-hook 'isearch-mode-hook #'isearch-mb--setup)))
+  (cond
+   (isearch-mb-mode
+    (put 'lazy-highlight-buffer 'isearch-mb--saved (default-value 'lazy-highlight-buffer))
+    ;; We need to lazy-highlight the whole buffer for two reasons.
+    ;; First, scrolling during a search is allowed.  Second, we enable
+    ;; `inhibit-redisplay' at certain points to avoid flicker, so the
+    ;; window-{start,end} values in `isearch-lazy-highlight-update'
+    ;; are unreliable
+    (setq-default lazy-highlight-buffer t)
+    (add-hook 'isearch-mode-hook #'isearch-mb--setup))
+   (t
+    (setq-default lazy-highlight-buffer (get 'lazy-highlight-buffer 'isearch-mb--saved))
+    (remove-hook 'isearch-mode-hook #'isearch-mb--setup))))
 
 (provide 'isearch-mb)
 ;;; isearch-mb.el ends here
