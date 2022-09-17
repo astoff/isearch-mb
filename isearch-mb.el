@@ -6,7 +6,7 @@
 ;; URL: https://github.com/astoff/isearch-mb
 ;; Keywords: matching
 ;; Package-Requires: ((emacs "27.1"))
-;; Version: 0.5
+;; Version: 0.6
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
