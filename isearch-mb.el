@@ -108,7 +108,7 @@
 (defun isearch-mb--after-change (_beg _end _len)
   "Hook to run from the minibuffer to update the isearch state."
   (let ((string (minibuffer-contents))
-        (inhibit-redisplay t))
+        (cursor-in-echo-area t))
     (with-minibuffer-selected-window
       (setq isearch-string (substring-no-properties string))
       (isearch-update-from-string-properties string)
@@ -181,7 +181,7 @@
 Intended as an advice for isearch commands."
   (if (minibufferp)
       (let ((enable-recursive-minibuffers t)
-            (inhibit-redisplay t))
+            (cursor-in-echo-area t))
         (with-minibuffer-selected-window
           (apply args)))
     (apply args)))
@@ -270,19 +270,9 @@ minibuffer."
 During an isearch-mb session, the following keys are available:
 \\{isearch-mb-minibuffer-map}"
   :global t
-  (cond
-   (isearch-mb-mode
-    (put 'lazy-highlight-buffer 'isearch-mb--saved (default-value 'lazy-highlight-buffer))
-    ;; We need to lazy-highlight the whole buffer for two reasons.
-    ;; First, scrolling during a search is allowed.  Second, we enable
-    ;; `inhibit-redisplay' at certain points to avoid flicker, so the
-    ;; window-{start,end} values in `isearch-lazy-highlight-update'
-    ;; are unreliable
-    (setq-default lazy-highlight-buffer t)
-    (add-hook 'isearch-mode-hook #'isearch-mb--setup))
-   (t
-    (setq-default lazy-highlight-buffer (get 'lazy-highlight-buffer 'isearch-mb--saved))
-    (remove-hook 'isearch-mode-hook #'isearch-mb--setup))))
+  (if isearch-mb-mode
+      (add-hook 'isearch-mode-hook #'isearch-mb--setup)
+    (remove-hook 'isearch-mode-hook #'isearch-mb--setup)))
 
 (provide 'isearch-mb)
 ;;; isearch-mb.el ends here
