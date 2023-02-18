@@ -39,7 +39,7 @@ uncontroversial improvements of the defaults:
 
 #+begin_src emacs-lisp
   (setq-default
-   ;; Match count next to the minibuffer prompt
+   ;; Show match count next to the minibuffer prompt
    isearch-lazy-count t
    ;; Don't be stingy with history; default is to keep just 16 entries
    search-ring-max 200
