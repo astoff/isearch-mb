@@ -154,10 +154,15 @@
 (defun isearch-mb--update-prompt (&rest _)
   "Update the minibuffer prompt according to search status."
   (when isearch-mb--prompt-overlay
-    (overlay-put isearch-mb--prompt-overlay
-                 'before-string
-		 (propertize (isearch-message-prefix)
-			     'face '(:inverse-video nil :inherit minibuffer-prompt)))))
+    (let ((message-prefix (isearch-message-prefix)))
+      ;; Don't make the prompt inverse-video when the text is.
+      (add-face-text-property 0 (length message-prefix)
+                              '(:inverse-video nil)
+                              nil
+                              message-prefix)
+      (overlay-put isearch-mb--prompt-overlay
+                   'before-string
+                   message-prefix))))
 
 (defun isearch-mb--add-defaults ()
   "Add default search strings to future history."
