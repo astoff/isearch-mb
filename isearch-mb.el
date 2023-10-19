@@ -154,18 +154,10 @@
 (defun isearch-mb--update-prompt (&rest _)
   "Update the minibuffer prompt according to search status."
   (when isearch-mb--prompt-overlay
-    (let ((count (isearch-lazy-count-format))
-          (len (or (overlay-get isearch-mb--prompt-overlay 'isearch-mb--len) 0)))
-      (overlay-put isearch-mb--prompt-overlay
-                   'isearch-mb--len (max len (length count)))
-      (overlay-put isearch-mb--prompt-overlay
-                   'before-string
-                   (concat count ;; Count is padded so that it only grows.
-                           (make-string (max 0 (- len (length count))) ?\ )
-                           (capitalize
-                            (or (isearch--describe-regexp-mode
-                                 isearch-regexp-function)
-                                "")))))))
+    (overlay-put isearch-mb--prompt-overlay
+                 'before-string
+		 (propertize (isearch-message-prefix)
+			     'face '(:inverse-video nil :inherit minibuffer-prompt)))))
 
 (defun isearch-mb--add-defaults ()
   "Add default search strings to future history."
@@ -236,7 +228,7 @@ minibuffer."
                            nil 'local)
                  (setq-local tool-bar-map isearch-tool-bar-map)
                  (setq isearch-mb--prompt-overlay (make-overlay (point-min) (point-min)
-                                                                (current-buffer) t t))
+                                                                (current-buffer) nil t))
                  (isearch-mb--update-prompt)
                  (isearch-mb--post-command-hook))
              (unwind-protect
@@ -246,7 +238,7 @@ minibuffer."
                    (dolist (fun isearch-mb--after-exit)
                      (advice-add fun :around #'isearch-mb--after-exit))
                    (read-from-minibuffer
-                    "I-search: " nil isearch-mb-minibuffer-map nil
+                    "" nil isearch-mb-minibuffer-map nil
                     (if isearch-regexp 'regexp-search-ring 'search-ring) nil t)
                    ;; Undo a possible recenter after quitting the minibuffer.
                    (set-window-start nil wstart))
