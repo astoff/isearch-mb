@@ -163,8 +163,9 @@
                    (concat count ;; Count is padded so that it only grows.
                            (make-string (max 0 (- len (length count))) ?\ )
                            (capitalize
-                            (isearch--describe-regexp-mode
-                             isearch-regexp-function)))))))
+                            (or (isearch--describe-regexp-mode
+                                 isearch-regexp-function)
+                                "")))))))
 
 (defun isearch-mb--add-defaults ()
   "Add default search strings to future history."
