@@ -154,15 +154,18 @@
 (defun isearch-mb--update-prompt (&rest _)
   "Update the minibuffer prompt according to search status."
   (when isearch-mb--prompt-overlay
-    (let ((message-prefix (isearch-message-prefix)))
-      ;; Don't make the prompt inverse-video when the text is.
-      (add-face-text-property 0 (length message-prefix)
-                              '(:inverse-video nil)
-                              nil
-                              message-prefix)
+    (let ((count (isearch-lazy-count-format))
+          (len (or (overlay-get isearch-mb--prompt-overlay 'isearch-mb--len) 0)))
+      (overlay-put isearch-mb--prompt-overlay
+                   'isearch-mb--len (max len (length count)))
       (overlay-put isearch-mb--prompt-overlay
                    'before-string
-                   message-prefix))))
+                   (concat count ;; Count is padded so that it only grows.
+                           (make-string (max 0 (- len (length count))) ?\ )
+                           (capitalize
+                            (or (isearch--describe-regexp-mode
+                                 isearch-regexp-function)
+                                "")))))))
 
 (defun isearch-mb--add-defaults ()
   "Add default search strings to future history."
@@ -233,7 +236,7 @@ minibuffer."
                            nil 'local)
                  (setq-local tool-bar-map isearch-tool-bar-map)
                  (setq isearch-mb--prompt-overlay (make-overlay (point-min) (point-min)
-                                                                (current-buffer) nil t))
+                                                                (current-buffer) t t))
                  (isearch-mb--update-prompt)
                  (isearch-mb--post-command-hook))
              (unwind-protect
@@ -243,7 +246,7 @@ minibuffer."
                    (dolist (fun isearch-mb--after-exit)
                      (advice-add fun :around #'isearch-mb--after-exit))
                    (read-from-minibuffer
-                    "" nil isearch-mb-minibuffer-map nil
+                    "I-search: " nil isearch-mb-minibuffer-map nil
                     (if isearch-regexp 'regexp-search-ring 'search-ring) nil t)
                    ;; Undo a possible recenter after quitting the minibuffer.
                    (set-window-start nil wstart))
