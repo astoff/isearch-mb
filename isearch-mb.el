@@ -1,12 +1,12 @@
 ;;; isearch-mb.el --- Control isearch from the minibuffer -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2021  Free Software Foundation, Inc.
+;; Copyright (C) 2021-2024  Free Software Foundation, Inc.
 
 ;; Author: Augusto Stoffel <arstoffel@gmail.com>
 ;; URL: https://github.com/astoff/isearch-mb
 ;; Keywords: matching
 ;; Package-Requires: ((emacs "27.1"))
-;; Version: 0.7
+;; Version: 0.8
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
