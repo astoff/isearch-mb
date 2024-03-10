@@ -9,9 +9,9 @@ commands do not end the search. Moreover, the search status
 information in the echo area and some keybindings are slightly
 simplified.
 
-isearch-mb is part of [[https://elpa.gnu.org/packages/isearch-mb.html][GNU ELPA]] and can be installed with =M-x
-package-install RET isearch-mb RET=. To activate it, type =M-x
-isearch-mb-mode RET=.
+isearch-mb is part of [[https://elpa.gnu.org/packages/isearch-mb.html][GNU ELPA]] and can be installed with
+=M-x package-install RET isearch-mb RET=. To activate it, type
+=M-x isearch-mb-mode RET=.
 
 ** Keybindings
 
@@ -105,19 +105,19 @@ order to work with isearch-mb. There are three cases to consider:
 
 - *Commands that end the isearch session* should be added to the list
   =isearch-mb--after-exit=. Examples of this case are
-  [[https://github.com/emacsorphanage/anzu][=anzu-isearch-query-replace=]] and [[https://github.com/minad/consult][=consult-line=]]:
+  [[https://github.com/abo-abo/avy][=avy-isearch=]] and [[https://github.com/minad/consult][=consult-line=]]:
 
   #+begin_src emacs-lisp
-    (add-to-list 'isearch-mb--after-exit #'anzu-isearch-query-replace)
-    (define-key isearch-mb-minibuffer-map (kbd "M-%") 'anzu-isearch-query-replace)
+    (add-to-list 'isearch-mb--after-exit #'avy-isearch)
+    (define-key isearch-mb-minibuffer-map (kbd "C-'") #'avy-isearch)
 
     (add-to-list 'isearch-mb--after-exit #'consult-line)
-    (define-key isearch-mb-minibuffer-map (kbd "M-s l") 'consult-line)
+    (define-key isearch-mb-minibuffer-map (kbd "M-s l") #'consult-line)
   #+end_src
 
-  Making motion commands quit the search as in standard isearch is out
-  of the scope of this package, but you can define your own commands
-  to emulate that effect. Here is one possibility:
+  Arranging for motion commands to quit the search, as in standard
+  isearch, is out of the scope of this package, but you can define
+  your own commands to emulate that effect.  Here is one possibility:
 
   #+begin_src emacs-lisp
     (defun move-end-of-line-maybe-ending-isearch (arg)
